@@ -1,36 +1,69 @@
 import json
 import os
 
-from cpro.client.rest import APIRequests, BlockingHTTPClient
-from cpro.models.rest.request import APICredentials, CoinsInformationRequest, DepositAddressRequest, DepositHistoryRequest, \
-    WithdrawHistoryRequest
+import pytest
 
-client = BlockingHTTPClient(APICredentials(
+from cpro.client.rest import APIRequests, BlockingHTTPClient, AsyncIOHTTPClient, HTTPClient
+from cpro.models.rest.request import APICredentials, CoinsInformationRequest, DepositAddressRequest, \
+    DepositHistoryRequest, \
+    WithdrawHistoryRequest
+from cpro.models.rest.response import CoinsInformationResponse, DepositAddressResponse, DepositHistoryResponse, \
+    WithdrawHistoryResponse
+from tests.utils import _test_endpoint
+
+credentials = APICredentials(
     api_key=os.getenv("API_KEY"),
     api_secret=os.getenv("API_SECRET")
-))
+)
+blocking_client = BlockingHTTPClient(credentials)
+async_client = AsyncIOHTTPClient(credentials)
 
 
-def test_get_all_coins():
-    print(APIRequests.GET_ALL_USER_COINS.execute(client, CoinsInformationRequest()))
+@pytest.mark.asyncio
+@pytest.mark.parametrize("client", [blocking_client, async_client])
+async def test_get_all_coins(client: HTTPClient):
+    response: CoinsInformationResponse = await _test_endpoint(
+        client, APIRequests.GET_ALL_USER_COINS, CoinsInformationRequest()
+    )
+
+    assert len(response.coins) > 0
 
 
-def test_get_eth_address():
-    print(json.dumps(APIRequests.GET_DEPOSIT_ADDRESS.execute(client, DepositAddressRequest(
-        coin="ETH",
-        network="ETH"
-    )).to_dict(), indent=2))
+@pytest.mark.asyncio
+@pytest.mark.parametrize("client", [blocking_client, async_client])
+async def test_get_deposit_address(client: HTTPClient):
+    response: DepositAddressResponse = await _test_endpoint(
+        client, APIRequests.GET_DEPOSIT_ADDRESS,
+        DepositAddressRequest(
+            coin="ETH",
+            network="ETH"
+        )
+    )
+
+    assert len(response.address) > 0
 
 
-def test_get_deposit_history():
-    print(json.dumps(
-        APIRequests.GET_DEPOSIT_HISTORY.execute(client, DepositHistoryRequest(coin="ETH")).to_dict(),
-        indent=2
-    ))
+@pytest.mark.asyncio
+@pytest.mark.parametrize("client", [blocking_client, async_client])
+async def test_get_deposit_history(client: HTTPClient):
+    response: DepositHistoryResponse = await _test_endpoint(
+        client, APIRequests.GET_DEPOSIT_HISTORY,
+        DepositHistoryRequest(
+            coin="ETH"
+        )
+    )
+
+    assert isinstance(response, DepositHistoryResponse)
 
 
-def test_get_withdraw_history():
-    print(json.dumps(
-        APIRequests.GET_WITHDRAW_HISTORY.execute(client, WithdrawHistoryRequest(coin="ETH")).to_dict(),
-        indent=2
-    ))
+@pytest.mark.asyncio
+@pytest.mark.parametrize("client", [blocking_client, async_client])
+async def test_get_withdraw_history(client: HTTPClient):
+    response: WithdrawHistoryResponse = await _test_endpoint(
+        client, APIRequests.GET_WITHDRAW_HISTORY,
+        WithdrawHistoryRequest(
+            coin="ETH"
+        )
+    )
+
+    assert isinstance(response, WithdrawHistoryResponse)

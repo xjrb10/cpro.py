@@ -137,7 +137,6 @@ class BlockingHTTPClient(HTTPClient):
         else:
             request_data = data
 
-        print(API_BASE_URL + url, request_data.encode(), headers, request.method.upper())
         try:
             with urlopen(Request(
                     API_BASE_URL + url, data=request_data.encode(), headers=headers, method=request.method.upper()
@@ -169,7 +168,7 @@ class AsyncIOHTTPClient(HTTPClient):
         try:
             async with aiohttp.ClientSession() as cs:
                 async with cs.request(
-                        request.method.upper(), API_BASE_URL + request.endpoint,
+                        request.method.upper(), API_BASE_URL + url,
                         data=data or None, json=json or None, headers=headers
                 ) as response:
                     return request.response_cls.from_json(await response.text())

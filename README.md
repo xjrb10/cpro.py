@@ -76,8 +76,6 @@ Clear and concise CoinsPro API library written in Python for coins.ph
 
 Check out the [/tests](/tests) directory for example code and practical usage
 
-**TODO:** Change namespace for library code
-
 ```py
 import os
 
