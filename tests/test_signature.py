@@ -1,4 +1,4 @@
-from models.rest.request import EncodedPayload
+from cpro.models.rest.request import EncodedPayload
 
 
 def test_hmac():

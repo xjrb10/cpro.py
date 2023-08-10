@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 from marshmallow.fields import Decimal
 
-from models.rest.enums import _FilterType
+from cpro.models.rest.enums import _FilterType
 
 P_INFINITY = 99999999999.00000000
 N_INFINITY = -99999999999.00000000

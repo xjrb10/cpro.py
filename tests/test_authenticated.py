@@ -1,8 +1,8 @@
 import json
 import os
 
-from client.rest import APIRequests, BlockingHTTPClient
-from models.rest.request import APICredentials, CoinsInformationRequest, DepositAddressRequest, DepositHistoryRequest, \
+from cpro.client.rest import APIRequests, BlockingHTTPClient
+from cpro.models.rest.request import APICredentials, CoinsInformationRequest, DepositAddressRequest, DepositHistoryRequest, \
     WithdrawHistoryRequest
 
 client = BlockingHTTPClient(APICredentials(

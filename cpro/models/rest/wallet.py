@@ -5,7 +5,7 @@ from datetime import datetime
 from dataclasses_json import dataclass_json, Undefined, config
 from marshmallow.fields import Decimal
 
-from models.rest.enums import DepositStatus
+from cpro.models.rest.enums import DepositStatus
 
 
 @dataclass_json(undefined=Undefined.RAISE)

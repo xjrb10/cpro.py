@@ -1,12 +1,11 @@
-import typing
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TypeVar
 
 from dataclasses_json import dataclass_json, config, Undefined, DataClassJsonMixin
 
-from models.rest.symbol import SymbolInfo
-from models.rest.wallet import Coin, DepositTransactionInfo, WithdrawTransactionInfo
+from cpro.models.rest.symbol import SymbolInfo
+from cpro.models.rest.wallet import Coin, DepositTransactionInfo, WithdrawTransactionInfo
 
 
 @dataclass(frozen=True)

@@ -77,12 +77,12 @@ Clear and concise CoinsPro API library written in Python for coins.ph
 Check out the [/tests](/tests) directory for example code and practical usage
 
 **TODO:** Change namespace for library code
+
 ```py
 import os
 
-from client.rest import APIRequests, BlockingHTTPClient, AsyncIOHTTPClient
-from models.rest.request import APICredentials, CoinsInformationRequest
-
+from cpro.client.rest import APIRequests, BlockingHTTPClient, AsyncIOHTTPClient
+from cpro.models.rest.request import APICredentials, CoinsInformationRequest
 
 credentials = APICredentials(
     api_key=os.getenv("API_KEY"),
@@ -100,6 +100,17 @@ response = await APIRequests.GET_ALL_USER_COINS.execute_async(client, CoinsInfor
 
 # >>> response: CoinsInformationResponse(coins=[Coin(coin='PHP', name='PHP', ... )])
 ```
+
+### Development
+
+NOTE: Guide assumes you have the repository locally cloned.
+
+**Running tests:**
+> 1. **Install required test dependencies:**
+>    > `pip install -e ".[test]"`
+> 2. **Create a `./tests/.env` file with your API key and secret, example in [`./tests/.env.example`](/tests/.env.example)**
+> 3. **Run unit tests**
+>    > `python -m pytest`
 
 ---
 

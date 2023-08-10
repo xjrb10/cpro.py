@@ -2,9 +2,9 @@ import logging
 
 import pytest
 
-from client.rest import BlockingHTTPClient, AsyncIOHTTPClient, APIRequests
-from models.rest.request import ExchangeInformationRequest
-from models.rest.response import ExchangeInformationResponse, PingResponse, ServerTimeResponse
+from cpro.client.rest import BlockingHTTPClient, AsyncIOHTTPClient, APIRequests
+from cpro.models.rest.request import ExchangeInformationRequest
+from cpro.models.rest.response import ExchangeInformationResponse, PingResponse, ServerTimeResponse
 
 blocking_client = BlockingHTTPClient()
 async_client = AsyncIOHTTPClient()

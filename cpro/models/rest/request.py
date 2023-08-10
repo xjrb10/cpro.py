@@ -8,9 +8,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from urllib.parse import quote, urlencode
 
-from dataclasses_json import DataClassJsonMixin, config, dataclass_json
+from dataclasses_json import DataClassJsonMixin, config
 
-from models.rest.enums import DepositStatus, WithdrawStatus
+from cpro.models.rest.enums import DepositStatus, WithdrawStatus
 
 
 @dataclass(frozen=True)

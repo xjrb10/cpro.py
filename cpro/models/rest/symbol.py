@@ -2,8 +2,8 @@ from dataclasses import dataclass, field
 
 from dataclasses_json import dataclass_json, config
 
-from models.rest.filter import FilterOption, create_filter
-from models.rest.enums import OrderType, SymbolStatus
+from cpro.models.rest.filter import FilterOption, create_filter
+from cpro.models.rest.enums import OrderType, SymbolStatus
 
 
 @dataclass_json

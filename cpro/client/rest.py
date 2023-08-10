@@ -8,10 +8,10 @@ from urllib.request import Request, urlopen
 
 import aiohttp
 
-from models.rest.enums import SecurityType
-from models.rest.request import RequestPayload, APICredentials, TRequestPayload, CoinsInformationRequest, \
+from cpro.models.rest.enums import SecurityType
+from cpro.models.rest.request import RequestPayload, APICredentials, TRequestPayload, CoinsInformationRequest, \
     DepositAddressRequest, DepositHistoryRequest, WithdrawHistoryRequest
-from models.rest.response import ExchangeInformationResponse, TResponsePayload, ServerTimeResponse, PingResponse, \
+from cpro.models.rest.response import ExchangeInformationResponse, TResponsePayload, ServerTimeResponse, PingResponse, \
     CoinsInformationResponse, DepositAddressResponse, DepositHistoryResponse, WithdrawHistoryResponse
 
 
@@ -58,7 +58,7 @@ class HTTPClient(ABC):
         params = ""
         headers = {"Accept": "application/json"}
 
-        if not isinstance(payload, request.required_payload_cls):
+        if request.required_payload_cls and not isinstance(payload, request.required_payload_cls):
             raise ValueError(f"Payload must be of {request.required_payload_cls}, {type(payload)} given.")
 
         if not payload and request.security != SecurityType.NONE:
@@ -170,7 +170,7 @@ class AsyncIOHTTPClient(HTTPClient):
             async with aiohttp.ClientSession() as cs:
                 async with cs.request(
                         request.method.upper(), API_BASE_URL + request.endpoint,
-                        data=data, json=json, headers=headers
+                        data=data or None, json=json or None, headers=headers
                 ) as response:
                     return request.response_cls.from_json(await response.text())
         except HTTPError as e:
