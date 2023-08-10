@@ -3,7 +3,10 @@ from datetime import datetime
 from typing import TypeVar
 
 from dataclasses_json import dataclass_json, config, Undefined, DataClassJsonMixin
+from marshmallow.fields import Decimal
 
+from cpro.models.rest.market import MarketOrder, TradeInfo, MarketDatapoint, TickerStatistics, \
+    SymbolPriceTickerStatistics, SymbolOrderBookTickerStatistics, CryptoAssetTradingPair
 from cpro.models.rest.symbol import SymbolInfo
 from cpro.models.rest.wallet import Coin, DepositTransactionInfo, WithdrawTransactionInfo
 
@@ -19,14 +22,12 @@ TResponsePayload = TypeVar("TResponsePayload", bound=ResponsePayload)
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class PingResponse(ResponsePayload):
-    # https://coins-docs.github.io/rest-api/#test-connectivity
     pass
 
 
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class ServerTimeResponse(ResponsePayload):
-    # https://coins-docs.github.io/rest-api/#check-server-time
     serverTime: datetime = field(metadata=config(
         encoder=lambda _: int(_.timestamp() * 1000),
         decoder=lambda _: datetime.fromtimestamp(_ / 1000.0)
@@ -36,7 +37,6 @@ class ServerTimeResponse(ResponsePayload):
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class ExchangeInformationResponse(ResponsePayload):
-    # https://coins-docs.github.io/rest-api/#exchange-information
     timezone: str  # default: UTC - todo: currently this is ignored by the lib
     serverTime: datetime = field(metadata=config(
         encoder=lambda _: int(_.timestamp() * 1000),
@@ -48,7 +48,6 @@ class ExchangeInformationResponse(ResponsePayload):
 
 @dataclass(frozen=True)
 class CoinsInformationResponse(ResponsePayload, DataClassJsonMixin):
-    # https://coins-docs.github.io/rest-api/#all-coins-information-user_data
     coins: list[Coin]
 
     @classmethod
@@ -61,7 +60,6 @@ class CoinsInformationResponse(ResponsePayload, DataClassJsonMixin):
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class DepositAddressResponse(ResponsePayload):
-    # https://coins-docs.github.io/rest-api/#deposit-address-user_data
     coin: str
     address: str
     addressTag: str
@@ -69,7 +67,6 @@ class DepositAddressResponse(ResponsePayload):
 
 @dataclass(frozen=True)
 class DepositHistoryResponse(ResponsePayload, DataClassJsonMixin):
-    # https://coins-docs.github.io/rest-api/#deposit-address-user_data
     transactions: list[DepositTransactionInfo]
 
     @classmethod
@@ -81,7 +78,6 @@ class DepositHistoryResponse(ResponsePayload, DataClassJsonMixin):
 
 @dataclass(frozen=True)
 class WithdrawHistoryResponse(ResponsePayload, DataClassJsonMixin):
-    # https://coins-docs.github.io/rest-api/#withdraw-history-user_data
     transactions: list[WithdrawTransactionInfo]
 
     @classmethod
@@ -89,3 +85,111 @@ class WithdrawHistoryResponse(ResponsePayload, DataClassJsonMixin):
         if isinstance(kvs, list):
             return super().from_dict({"transactions": kvs}, infer_missing=infer_missing)
         return super().from_dict(kvs, infer_missing=infer_missing)
+
+
+@dataclass_json(undefined=Undefined.RAISE)
+@dataclass(frozen=True)
+class OrderBookResponse(ResponsePayload):
+    lastUpdateId: int
+    bids: list[MarketOrder] = field(
+        metadata=config(
+            encoder=lambda _: [(__.price, __.qty) for __ in _],
+            decoder=lambda _: [MarketOrder(*__) for __ in _]
+        )
+    )
+    asks: list[MarketOrder] = field(
+        metadata=config(
+            encoder=lambda _: [(__.price, __.qty) for __ in _],
+            decoder=lambda _: [MarketOrder(*__) for __ in _]
+        )
+    )
+
+
+@dataclass(frozen=True)
+class RecentTradesResponse(ResponsePayload, DataClassJsonMixin):
+    trades: list[TradeInfo]
+
+    @classmethod
+    def from_dict(cls, kvs, *, infer_missing=False) -> "RecentTradesResponse":
+        if isinstance(kvs, list):
+            return super().from_dict({"trades": kvs}, infer_missing=infer_missing)
+        return super().from_dict(kvs, infer_missing=infer_missing)
+
+
+@dataclass(frozen=True)
+class GraphDataResponse(ResponsePayload, DataClassJsonMixin):
+    datapoints: list[MarketDatapoint] = field(
+        metadata=config(
+            decoder=lambda _: [MarketDatapoint.from_dict({
+                # map into dict for typed parsing
+                "openTime": __[0],
+                "open": __[1],
+                "high": __[2],
+                "low": __[3],
+                "close": __[4],
+                "volume": __[5],
+                "closeTime": __[6],
+                "quoteAssetVolume": __[7],
+                "trades": __[8],
+                "takerBuyBaseAssetVolume": __[9],
+                "takerBuyQuoteAssetVolume": __[10],
+            }) for __ in _]
+        )
+    )
+
+    @classmethod
+    def from_dict(cls, kvs, *, infer_missing=False) -> "GraphDataResponse":
+        if isinstance(kvs, list):
+            return super().from_dict({"datapoints": kvs}, infer_missing=infer_missing)
+        return super().from_dict(kvs, infer_missing=infer_missing)
+
+
+@dataclass(frozen=True)
+class DailyTickerResponse(ResponsePayload, DataClassJsonMixin):
+    tickers: list[TickerStatistics]
+
+    @classmethod
+    def from_dict(cls, kvs, *, infer_missing=False) -> "DailyTickerResponse":
+        if isinstance(kvs, list):
+            return super().from_dict({"tickers": kvs}, infer_missing=infer_missing)
+        return super().from_dict({"tickers": [kvs]}, infer_missing=infer_missing)
+
+
+@dataclass(frozen=True)
+class SymbolPriceTickerResponse(ResponsePayload, DataClassJsonMixin):
+    tickers: list[SymbolPriceTickerStatistics]
+
+    @classmethod
+    def from_dict(cls, kvs, *, infer_missing=False) -> "SymbolPriceTickerResponse":
+        if isinstance(kvs, list):
+            return super().from_dict({"tickers": kvs}, infer_missing=infer_missing)
+        return super().from_dict({"tickers": [kvs]}, infer_missing=infer_missing)
+
+
+@dataclass(frozen=True)
+class SymbolOrderBookTickerResponse(ResponsePayload, DataClassJsonMixin):
+    tickers: list[SymbolOrderBookTickerStatistics]
+
+    @classmethod
+    def from_dict(cls, kvs, *, infer_missing=False) -> "SymbolOrderBookTickerResponse":
+        if isinstance(kvs, list):
+            return super().from_dict({"tickers": kvs}, infer_missing=infer_missing)
+        return super().from_dict({"tickers": [kvs]}, infer_missing=infer_missing)
+
+
+@dataclass(frozen=True)
+class CryptoAssetTradingPairListResponse(ResponsePayload, DataClassJsonMixin):
+    pairs: list[CryptoAssetTradingPair]
+
+    @classmethod
+    def from_dict(cls, kvs, *, infer_missing=False) -> "CryptoAssetTradingPairListResponse":
+        if isinstance(kvs, list):
+            return super().from_dict({"pairs": kvs}, infer_missing=infer_missing)
+        return super().from_dict({"pairs": [kvs]}, infer_missing=infer_missing)
+
+
+@dataclass_json(undefined=Undefined.RAISE)
+@dataclass(frozen=True)
+class CryptoAssetCurrentPriceAverageResponse(ResponsePayload):
+    mins: int
+    price: Decimal

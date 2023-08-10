@@ -10,13 +10,7 @@ from urllib.parse import quote, urlencode
 
 from dataclasses_json import DataClassJsonMixin, config
 
-from cpro.models.rest.enums import DepositStatus, WithdrawStatus
-
-
-@dataclass(frozen=True)
-class APICredentials:
-    api_key: str
-    api_secret: str = None
+from cpro.models.rest.enums import DepositStatus, ChartIntervals
 
 
 @dataclass
@@ -59,7 +53,7 @@ TRequestPayload = typing.TypeVar("TRequestPayload", bound=RequestPayload)
 
 
 @dataclass(frozen=True)
-class ExchangeInformationRequest(RequestPayload):
+class _OptionallyBatchedRequest(RequestPayload, ABC):
     symbol: typing.Optional[str] = None
     symbols: typing.Optional[typing.List[str]] = None
 
@@ -73,6 +67,11 @@ class ExchangeInformationRequest(RequestPayload):
                 "symbol": self.symbol
             })
         return EncodedPayload()
+
+
+@dataclass(frozen=True)
+class ExchangeInformationRequest(_OptionallyBatchedRequest):
+    pass
 
 
 @dataclass(frozen=True)
@@ -111,9 +110,8 @@ class DepositAddressRequest(RequestPayload, DataClassJsonMixin):
 
 
 @dataclass(frozen=True)
-class DepositHistoryRequest(RequestPayload, DataClassJsonMixin):
+class TransactionHistoryRequest(RequestPayload, DataClassJsonMixin):
     coin: typing.Optional[str] = None
-    txId: typing.Optional[str] = None
     status: typing.Optional[DepositStatus] = None
     startTime: datetime = field(
         default_factory=lambda: datetime.now() - timedelta(days=90),
@@ -145,34 +143,75 @@ class DepositHistoryRequest(RequestPayload, DataClassJsonMixin):
 
 
 @dataclass(frozen=True)
-class WithdrawHistoryRequest(RequestPayload, DataClassJsonMixin):
-    coin: typing.Optional[str] = None
+class DepositHistoryRequest(TransactionHistoryRequest):
+    txId: typing.Optional[str] = None
+
+
+@dataclass(frozen=True)
+class WithdrawHistoryRequest(TransactionHistoryRequest):
     withdrawOrderId: typing.Optional[str] = None
-    status: typing.Optional[WithdrawStatus] = None
-    startTime: datetime = field(
-        default_factory=lambda: datetime.now() - timedelta(days=90),
+
+
+@dataclass(frozen=True)
+class OrderBookRequest(RequestPayload, DataClassJsonMixin):
+    symbol: str = None
+    limit: int = 100
+
+    def to_encoded(self) -> EncodedPayload:
+        return EncodedPayload(raw_params={k: v for k, v in self.to_dict().items() if v})
+
+
+@dataclass(frozen=True)
+class RecentTradesRequest(RequestPayload, DataClassJsonMixin):
+    symbol: str
+    interval: int = 500
+
+    def to_encoded(self) -> EncodedPayload:
+        return EncodedPayload(raw_params={k: v for k, v in self.to_dict().items() if v})
+
+
+@dataclass(frozen=True)
+class GraphDataRequest(RequestPayload, DataClassJsonMixin):
+    symbol: str
+    interval: ChartIntervals
+    startTime: typing.Optional[datetime] = field(
+        default=None,
         metadata=config(
-            encoder=lambda _: int(_.timestamp() * 1000),
+            encoder=lambda _: _ and int(_.timestamp() * 1000),
             decoder=lambda _: datetime.fromtimestamp(_ / 1000.0)
         )
     )
-    endTime: datetime = field(
-        default_factory=datetime.now,
+    endTime: typing.Optional[datetime] = field(
+        default=None,
         metadata=config(
-            encoder=lambda _: int(_.timestamp() * 1000),
+            encoder=lambda _: _ and int(_.timestamp() * 1000),
             decoder=lambda _: datetime.fromtimestamp(_ / 1000.0)
         )
     )
-    offset: int = 0
-    limit: int = 1000
-    recvWindow: int = 5000
-    timestamp: datetime = field(
-        default_factory=datetime.now,
-        metadata=config(
-            encoder=lambda _: int(_.timestamp() * 1000),
-            decoder=lambda _: datetime.fromtimestamp(_ / 1000.0)
-        )
-    )
+    limit: int = 500
+
+    def to_encoded(self) -> EncodedPayload:
+        return EncodedPayload(raw_params={k: v for k, v in self.to_dict().items() if v})
+
+
+@dataclass(frozen=True)
+class DailyTickerRequest(_OptionallyBatchedRequest):
+    pass
+
+
+@dataclass(frozen=True)
+class SymbolPriceTickerRequest(_OptionallyBatchedRequest):
+    pass
+
+
+@dataclass(frozen=True)
+class SymbolOrderBookTickerRequest(_OptionallyBatchedRequest):
+    pass
+
+
+@dataclass(frozen=True)
+class CryptoAssetCurrentPriceAverageRequest(RequestPayload, DataClassJsonMixin):
+    symbol: str
 
     def to_encoded(self) -> EncodedPayload:
         return EncodedPayload(raw_params={k: v for k, v in self.to_dict().items() if v})

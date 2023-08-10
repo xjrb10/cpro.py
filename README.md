@@ -15,17 +15,15 @@ Clear and concise CoinsPro API library written in Python for coins.ph
             - [X] [Ping](https://coins-docs.github.io/rest-api/#test-connectivity)
             - [X] [Get Server Time](https://coins-docs.github.io/rest-api/#check-server-time)
             - [X] [Get Exchange Information](https://coins-docs.github.io/rest-api/#exchange-information)
-        - [ ] Market Info:
-            - [ ] [Get Order Book](https://coins-docs.github.io/rest-api/#order-book) (TODO)
-            - [ ] [Get Recent Trades](https://coins-docs.github.io/rest-api/#recent-trades-list) (TODO)
-            - [ ] [Get Kline/Candlestick Data](https://coins-docs.github.io/rest-api/#klinecandlestick-data) (TODO)
-            - [ ] [Get 24hr Ticker Price Change Statistics](https://coins-docs.github.io/rest-api/#24hr-ticker-price-change-statistics) (
-              TODO)
-            - [ ] [Get Symbol Price Ticker](https://coins-docs.github.io/rest-api/#symbol-order-book-ticker) (TODO)
-            - [ ] [Get Symbol Order Book Ticker](https://coins-docs.github.io/rest-api/#symbol-order-book-ticker) (TODO)
-            - [ ] [Get Current Average Price](https://coins-docs.github.io/rest-api/#current-average-price) (TODO)
-            - [ ] [Get CryptoAsset Trading Pairs](https://coins-docs.github.io/rest-api/#cryptoasset-trading-pairs) (
-              TODO)
+        - [X] Market Info:
+            - [X] [Get Order Book](https://coins-docs.github.io/rest-api/#order-book)
+            - [X] [Get Recent Trades](https://coins-docs.github.io/rest-api/#recent-trades-list)
+            - [X] [Get Kline/Candlestick Data](https://coins-docs.github.io/rest-api/#klinecandlestick-data)
+            - [X] [Get 24hr Ticker Price Change Statistics](https://coins-docs.github.io/rest-api/#24hr-ticker-price-change-statistics)
+            - [X] [Get Symbol Price Ticker](https://coins-docs.github.io/rest-api/#symbol-order-book-ticker)
+            - [X] [Get Symbol Order Book Ticker](https://coins-docs.github.io/rest-api/#symbol-order-book-ticker)
+            - [X] [Get Current Average Price](https://coins-docs.github.io/rest-api/#current-average-price)
+            - [X] [Get CryptoAsset Trading Pairs](https://coins-docs.github.io/rest-api/#cryptoasset-trading-pairs)
     - [X] HMAC Authenticated:
         - [ ] Wallet Endpoints:
             - [X] [Get All Coins' Information](https://coins-docs.github.io/rest-api/#all-coins-information-user_data)
@@ -66,21 +64,25 @@ Clear and concise CoinsPro API library written in Python for coins.ph
 - [ ] **WebSocket Listener:**
     - [ ] not even going to list for now 🤦‍♂️ (TODO: lol)
 
+### Quirks:
+
+For precision purposes, we store decimals as `marshmallow.fields.Decimal` objects, this is to prevent any inherent
+rounding errors. These `Decimal` objects should then be cast into a `float` or an `int` in order to do arithmetic 
+operations.
+
 ### Not Implemented:
 
 - Rate limit management
-- Enums for symbols
-
+- Enums for symbols (would require frequent updates)
 
 ## Example Usage:
-
-Check out the [/tests](/tests) directory for example code and practical usage
 
 ```py
 import os
 
-from cpro.client.rest import APIRequests, BlockingHTTPClient, AsyncIOHTTPClient
-from cpro.models.rest.request import APICredentials, CoinsInformationRequest
+from cpro.client.rest import BlockingHTTPClient, AsyncIOHTTPClient, APICredentials
+from cpro.models.rest.request import CoinsInformationRequest
+from cpro.models.rest.endpoints import APIEndpoints
 
 credentials = APICredentials(
     api_key=os.getenv("API_KEY"),
@@ -89,12 +91,12 @@ credentials = APICredentials(
 
 # blocking/non-async example:
 client = BlockingHTTPClient(credentials)
-response = APIRequests.GET_ALL_USER_COINS.execute(client, CoinsInformationRequest())
+response = APIEndpoints.GET_ALL_USER_COINS.execute(client, CoinsInformationRequest())
 
 # non-blocking/async example:
 async_client = AsyncIOHTTPClient(credentials)
-response = await APIRequests.GET_ALL_USER_COINS.execute_async(client, CoinsInformationRequest())
-# diff:    ^^^^^                                       ^^^^^^
+response = await APIEndpoints.GET_ALL_USER_COINS.execute_async(client, CoinsInformationRequest())
+# diff:    ^^^^^                                        ^^^^^^
 
 # >>> response: CoinsInformationResponse(coins=[Coin(coin='PHP', name='PHP', ... )])
 ```
@@ -104,11 +106,13 @@ response = await APIRequests.GET_ALL_USER_COINS.execute_async(client, CoinsInfor
 NOTE: Guide assumes you have the repository locally cloned.
 
 **Running tests:**
-> 1. **Install required test dependencies:**
->    > `pip install -e ".[test]"`
-> 2. **Create a `./tests/.env` file with your API key and secret, example in [`./tests/.env.example`](/tests/.env.example)**
-> 3. **Run unit tests**
->    > `python -m pytest`
+
+1. **Install required test dependencies:**
+   > `pip install -e ".[test]"`
+2. **Create a `./tests/.env` file with your API key and secret, example in [`./tests/.env.example`](/tests/.env.example)
+   **
+3. **Run unit tests**
+   > `python -m pytest`
 
 ---
 

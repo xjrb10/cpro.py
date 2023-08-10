@@ -71,3 +71,21 @@ class WithdrawStatus(Enum):
     PROCESSING = 0
     SUCCESS = auto()
     FAILED = auto()
+
+
+class ChartIntervals(AutoStrEnum):
+    _1m = auto()
+    _3m = auto()
+    _5m = auto()
+    _15m = auto()
+    _30m = auto()
+    _1h = auto()
+    _2h = auto()
+    _4h = auto()
+    _6h = auto()
+    _8h = auto()
+    _12h = auto()
+    _1d = auto()
+    _3d = auto()
+    _1w = auto()
+    _1M = auto()

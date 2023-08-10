@@ -5,7 +5,7 @@ from datetime import datetime
 from dataclasses_json import dataclass_json, Undefined, config
 from marshmallow.fields import Decimal
 
-from cpro.models.rest.enums import DepositStatus
+from cpro.models.rest.enums import DepositStatus, WithdrawStatus
 
 
 @dataclass_json(undefined=Undefined.RAISE)
@@ -59,7 +59,6 @@ class TransactionInfo:
     amount: Decimal
     coin: str
     network: str
-    status: DepositStatus
     address: str
     addressTag: str
     txId: str
@@ -69,6 +68,7 @@ class TransactionInfo:
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class DepositTransactionInfo(TransactionInfo):
+    status: DepositStatus
     insertTime: datetime = field(
         metadata=config(
             encoder=lambda _: int(_.timestamp() * 1000),
@@ -80,6 +80,7 @@ class DepositTransactionInfo(TransactionInfo):
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class WithdrawTransactionInfo(TransactionInfo):
+    status: WithdrawStatus
     applyTime: datetime = field(
         metadata=config(
             encoder=lambda _: int(_.timestamp() * 1000),

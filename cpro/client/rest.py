@@ -1,32 +1,26 @@
 import typing
 from abc import ABC, abstractmethod
-from enum import Enum
+from dataclasses import dataclass
 from http.client import HTTPResponse
-from json import dumps
+from json import dumps, loads
 from urllib.error import HTTPError
-from urllib.request import Request, urlopen
+from urllib.request import Request, urlopen, HTTPErrorProcessor, build_opener
 
 import aiohttp
 
+from cpro.exception import HTTPException, CoinsAPIException
 from cpro.models.rest.enums import SecurityType
-from cpro.models.rest.request import RequestPayload, APICredentials, TRequestPayload, CoinsInformationRequest, \
-    DepositAddressRequest, DepositHistoryRequest, WithdrawHistoryRequest
-from cpro.models.rest.response import ExchangeInformationResponse, TResponsePayload, ServerTimeResponse, PingResponse, \
-    CoinsInformationResponse, DepositAddressResponse, DepositHistoryResponse, WithdrawHistoryResponse
+from cpro.models.rest.request import RequestPayload, TRequestPayload
+from cpro.models.rest.response import TResponsePayload
 
 
-class HTTPException(Exception):
-    def __init__(self, body: str, headers: dict, status: int):
-        self.body = body
-        self.headers = headers
-        self.status = status
-        super().__init__(f"Received code {status}: {body}\n\nResponse Headers: {dumps(headers, indent=2)}")
+@dataclass(frozen=True)
+class APICredentials:
+    api_key: str
+    api_secret: str = None
 
 
-API_BASE_URL = "https://api.pro.coins.ph"  # https://coins-docs.github.io/rest-api/#general-api-information
-
-
-class _APIRequest:
+class APIEndpoint:
     def __init__(
             self,
             endpoint: str,
@@ -41,18 +35,20 @@ class _APIRequest:
 
 
 class HTTPClient(ABC):
+    API_BASE_URL = "https://api.pro.coins.ph"  # https://coins-docs.github.io/rest-api/#general-api-information
+
     def __init__(self, credentials: APICredentials = None):
         self.credentials = credentials
 
     @abstractmethod
     def do_request(
             self,
-            request: _APIRequest,
+            request: APIEndpoint,
             request_payload: typing.Optional[RequestPayload] = None
     ) -> TResponsePayload:
         ...
 
-    def payload_to_tuple(self, request: _APIRequest, payload: typing.Optional[RequestPayload] = None) -> tuple:
+    def payload_to_tuple(self, request: APIEndpoint, payload: typing.Optional[RequestPayload] = None) -> tuple:
         json = {}
         data = ""
         params = ""
@@ -83,42 +79,18 @@ class HTTPClient(ABC):
         return json, data, params, headers
 
 
-class APIRequests(Enum):
-    GET_PING = _APIRequest("GET /openapi/v1/ping", PingResponse)
-    GET_SERVER_TIME = _APIRequest("GET /openapi/v1/time", ServerTimeResponse)
-    GET_EXCHANGE_INFO = _APIRequest("GET /openapi/v1/exchangeInfo", ExchangeInformationResponse)
+class _NonRaisingHTTPErrorProcessor(HTTPErrorProcessor):
+    def http_response(self, _, response):
+        return response
 
-    GET_ALL_USER_COINS = _APIRequest(
-        "GET /openapi/wallet/v1/config/getall", CoinsInformationResponse,
-        CoinsInformationRequest, SecurityType.USER_DATA
-    )
-    GET_DEPOSIT_ADDRESS = _APIRequest(
-        "GET /openapi/wallet/v1/deposit/address", DepositAddressResponse,
-        DepositAddressRequest, SecurityType.USER_DATA
-    )
-    # todo: https://coins-docs.github.io/rest-api/#withdrawuser_data
-    GET_DEPOSIT_HISTORY = _APIRequest(
-        "GET /openapi/wallet/v1/deposit/history", DepositHistoryResponse,
-        DepositHistoryRequest, SecurityType.USER_DATA
-    )
-    GET_WITHDRAW_HISTORY = _APIRequest(
-        "GET /openapi/wallet/v1/withdraw/history", WithdrawHistoryResponse,
-        WithdrawHistoryRequest, SecurityType.USER_DATA
-    )
-
-    def execute(self, client: HTTPClient, payload: typing.Optional[RequestPayload] = None) -> TResponsePayload:
-        return client.do_request(self.value, payload)
-
-    async def execute_async(
-            self, client: HTTPClient, payload: typing.Optional[RequestPayload] = None
-    ) -> TResponsePayload:
-        return await client.do_request(self.value, payload)
+    def https_response(self, _, response):
+        return response
 
 
 class BlockingHTTPClient(HTTPClient):
     def do_request(
             self,
-            request: _APIRequest,
+            request: APIEndpoint,
             request_payload: typing.Optional[RequestPayload] = None
     ) -> TResponsePayload:
         json, data, params, headers = self.payload_to_tuple(request, request_payload)
@@ -137,25 +109,28 @@ class BlockingHTTPClient(HTTPClient):
         else:
             request_data = data
 
-        try:
-            with urlopen(Request(
-                    API_BASE_URL + url, data=request_data.encode(), headers=headers, method=request.method.upper()
-            )) as response:  # type: HTTPResponse
-                return request.response_cls.from_json(response.read().decode(
-                    response.headers.get_content_charset("utf-8")
-                ))
-        except HTTPError as e:
-            raise HTTPException(
-                body=str(e.reason),
-                headers={key.lower(): value for key, value in e.headers.items()},
-                status=e.code
+        with build_opener(_NonRaisingHTTPErrorProcessor).open(Request(
+                self.API_BASE_URL + url, data=request_data.encode(), headers=headers, method=request.method.upper()
+        )) as response:  # type: HTTPResponse
+            text_content = response.read().decode(
+                response.headers.get_content_charset("utf-8")
             )
+            response_data = loads(text_content)
+            if response_data and "code" in response_data and "msg" in response_data:
+                raise CoinsAPIException(response_data["code"], response_data["msg"])
+            if response.status >= 400:
+                raise HTTPException(
+                    body=text_content,
+                    headers={key.lower(): value for key, value in response.headers.items()},
+                    status=response.status
+                )
+            return request.response_cls.from_dict(response_data)
 
 
 class AsyncIOHTTPClient(HTTPClient):
     async def do_request(
             self,
-            request: _APIRequest,
+            request: APIEndpoint,
             request_payload: typing.Optional[RequestPayload] = None
     ) -> TResponsePayload:
         json, data, params, headers = self.payload_to_tuple(request, request_payload)
@@ -168,10 +143,14 @@ class AsyncIOHTTPClient(HTTPClient):
         try:
             async with aiohttp.ClientSession() as cs:
                 async with cs.request(
-                        request.method.upper(), API_BASE_URL + url,
+                        request.method.upper(), self.API_BASE_URL + url,
                         data=data or None, json=json or None, headers=headers
                 ) as response:
-                    return request.response_cls.from_json(await response.text())
+                    response_data = await response.json()
+                    if response_data and "code" in response_data and "msg" in response_data:
+                        raise CoinsAPIException(response_data["code"], response_data["msg"])
+                    response.raise_for_status()
+                    return request.response_cls.from_dict(response_data)
         except HTTPError as e:
             raise HTTPException(
                 body=str(e.reason),
