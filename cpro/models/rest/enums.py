@@ -89,3 +89,16 @@ class ChartIntervals(AutoStrEnum):
     _3d = auto()
     _1w = auto()
     _1M = auto()
+
+
+class ExecutionTypes(AutoStrEnum):
+    NEW = auto()
+    CANCELED = auto()
+    REJECTED = auto()
+    TRADE = auto()
+    EXPIRED = auto()
+
+
+class OrderSides(AutoStrEnum):
+    BUY = auto()
+    SELL = auto()

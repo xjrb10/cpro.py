@@ -9,7 +9,8 @@ setup(
     license="GPLv3",
     install_requires=[
         "aiohttp~=3.8.5",
-        "dataclasses-json~=0.5.14"
+        "dataclasses-json~=0.5.14",
+        "websockets~=11.0.3"
     ],
     extras_require={
         "test": [
