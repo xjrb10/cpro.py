@@ -28,32 +28,32 @@ Clear and concise CoinsPro API library written in Python for coins.ph
         - [ ] Wallet Endpoints:
             - [X] [Get All Coins' Information](https://coins-docs.github.io/rest-api/#all-coins-information-user_data)
             - [X] [Get Deposit Address](https://coins-docs.github.io/rest-api/#deposit-address-user_data)
-            - [X] [Initiate Withdrawal](https://coins-docs.github.io/rest-api/#withdrawuser_data) (TODO)
+            - [X] [Initiate Withdrawal](https://coins-docs.github.io/rest-api/#withdrawuser_data)
             - [X] [Get Deposit History](https://coins-docs.github.io/rest-api/#deposit-history-user_data)
             - [X] [Get Withdraw History](https://coins-docs.github.io/rest-api/#withdraw-history-user_data)
         - [X] Account endpoints:
-            - [X] [Test New Order](https://coins-docs.github.io/rest-api/#test-new-order-trade) (TODO)
-            - [X] [New Order](https://coins-docs.github.io/rest-api/#new-order--trade) (TODO)
-            - [X] [Query Order](https://coins-docs.github.io/rest-api/#query-order-user_data) (TODO)
-            - [X] [Cancel Order](https://coins-docs.github.io/rest-api/#cancel-order-trade) (TODO)
-            - [X] [Cancel All Open Orders on a Symbol](https://coins-docs.github.io/rest-api/#cancel-all-open-orders-on-a-symbol-trade) (TODO)
-            - [X] [Get Current Open Orders](https://coins-docs.github.io/rest-api/#current-open-orders-user_data) (TODO)
-            - [X] [Get Order History](https://coins-docs.github.io/rest-api/#history-orders-user_data) (TODO)
-            - [X] [Get Account Information](https://coins-docs.github.io/rest-api/#account-information-user_data) (TODO)
-            - [X] [Get Account Trade List](https://coins-docs.github.io/rest-api/#account-trade-list-user_data) (TODO)
-            - [X] [Withdraw (To Coins.ph Account)](https://coins-docs.github.io/rest-api/#withdraw-to-coins_ph-account-user_data) (TODO)
-            - [X] [Get Deposit order history(deposit order which deposit from coins_ph to exchange)](https://coins-docs.github.io/rest-api/#deposit-order-historydeposit-order-which-deposit-from-coins_ph-to-exchange-user_data) (TODO: explain yourself 😃)
-            - [X] [Get Withdraw Order History (withdrawal order which withdraw from exchange to coins_ph)](https://coins-docs.github.io/rest-api/#withdraw-order-history-withdrawal-order-which-withdraw-from-exchange-to-coins_ph-user_data) (TODO: explain yourself 😃)
-            - [X] [Get Trade Fee](https://coins-docs.github.io/rest-api/#trade-fee-user_data) (TODO)
-            - [X] [Request a Payment](https://coins-docs.github.io/rest-api/#payment-request-user_data) (TODO)
-            - [X] [Get Payment Request](https://coins-docs.github.io/rest-api/#get-payment-request) (TODO)
-            - [X] [Cancel payment request](https://coins-docs.github.io/rest-api/#cancel-payment-request) (TODO)
-            - [X] [Send reminder for payment request](https://coins-docs.github.io/rest-api/#send-reminder-for-payment-request) (TODO)
+            - [X] [Test New Order](https://coins-docs.github.io/rest-api/#test-new-order-trade)
+            - [X] [New Order](https://coins-docs.github.io/rest-api/#new-order--trade)
+            - [X] [Query Order](https://coins-docs.github.io/rest-api/#query-order-user_data)
+            - [X] [Cancel Order](https://coins-docs.github.io/rest-api/#cancel-order-trade)
+            - [X] [Cancel All Open Orders on a Symbol](https://coins-docs.github.io/rest-api/#cancel-all-open-orders-on-a-symbol-trade)
+            - [X] [Get Current Open Orders](https://coins-docs.github.io/rest-api/#current-open-orders-user_data)
+            - [X] [Get Order History](https://coins-docs.github.io/rest-api/#history-orders-user_data)
+            - [X] [Get Account Information](https://coins-docs.github.io/rest-api/#account-information-user_data)
+            - [X] [Get Account Trade List](https://coins-docs.github.io/rest-api/#account-trade-list-user_data)
+            - [X] [Withdraw (To Coins.ph Account)](https://coins-docs.github.io/rest-api/#withdraw-to-coins_ph-account-user_data)
+            - [X] [Get Deposit order history(deposit order which deposit from coins_ph to exchange)](https://coins-docs.github.io/rest-api/#deposit-order-historydeposit-order-which-deposit-from-coins_ph-to-exchange-user_data)
+            - [X] [Get Withdraw Order History (withdrawal order which withdraw from exchange to coins_ph)](https://coins-docs.github.io/rest-api/#withdraw-order-history-withdrawal-order-which-withdraw-from-exchange-to-coins_ph-user_data)
+            - [X] [Get Trade Fee](https://coins-docs.github.io/rest-api/#trade-fee-user_data)
+            - [X] [Request a Payment](https://coins-docs.github.io/rest-api/#payment-request-user_data)
+            - [X] [Get Payment Request](https://coins-docs.github.io/rest-api/#get-payment-request)
+            - [X] [Cancel payment request](https://coins-docs.github.io/rest-api/#cancel-payment-request)
+            - [X] [Send reminder for payment request](https://coins-docs.github.io/rest-api/#send-reminder-for-payment-request)
     - [X] API Key Authenticated:
-        - [ ] [User Data Event Stream](https://coins-docs.github.io/user-data-stream/):
-            - [ ] [Start Streaming](https://coins-docs.github.io/rest-api/#start-user-data-stream-user_stream) (TODO)
-            - [ ] [Stream KeepAlive](https://coins-docs.github.io/rest-api/#keepalive-user-data-stream-user_stream) (TODO)
-            - [ ] [Close Stream](https://coins-docs.github.io/rest-api/#close-user-data-stream-user_stream) (TODO)
+        - [X] [User Data Event Stream](https://coins-docs.github.io/user-data-stream/):
+            - [X] [Start Streaming](https://coins-docs.github.io/rest-api/#start-user-data-stream-user_stream)
+            - [X] [Stream KeepAlive](https://coins-docs.github.io/rest-api/#keepalive-user-data-stream-user_stream)
+            - [X] [Close Stream](https://coins-docs.github.io/rest-api/#close-user-data-stream-user_stream)
         - [X] [Merchant Endpoints](https://coins-docs.github.io/rest-api/#merchant-endpoints)
           - [X] [Creating Invoices](https://coins-docs.github.io/rest-api/#creating-invoices)
           - [X] [Retrieving Invoices](https://coins-docs.github.io/rest-api/#retrieving-invoices)
@@ -78,8 +78,9 @@ Clear and concise CoinsPro API library written in Python for coins.ph
       - [X] [Individual Symbol Book Ticker Streams](https://coins-docs.github.io/web-socket-streams/#individual-symbol-book-ticker-streams)
       - [X] [Partial Book Depth Streams](https://coins-docs.github.io/web-socket-streams/#partial-book-depth-streams)
       - [X] [Diff. Depth Stream](https://coins-docs.github.io/web-socket-streams/#diff-depth-stream)
-- [ ] **User Data Event Stream:**
-    - [ ] Client
+- [X] **User Data Event Stream:**
+    - [X] Asyncio Client
+    - [ ] Blocking Client
     - [X] Data Models:
       - [X] [Account Update](https://coins-docs.github.io/user-data-stream/#account-update)
       - [X] [Balance Update](https://coins-docs.github.io/user-data-stream/#balance-update)
