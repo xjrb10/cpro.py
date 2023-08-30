@@ -1,9 +1,9 @@
 import re
 import typing
 from dataclasses import dataclass
+from decimal import *
 
 from dataclasses_json import dataclass_json
-from marshmallow.fields import Decimal
 
 from cpro.models.rest.enums import _FilterType
 

@@ -24,9 +24,10 @@ class APIEndpoint:
     def __init__(
             self,
             endpoint: str,
-            response_cls: typing.Type[TResponsePayload],
             required_payload_cls: typing.Type[TRequestPayload] = None,
-            security: SecurityType = SecurityType.NONE
+            security: SecurityType = SecurityType.NONE,
+            *,
+            response_cls: typing.Type[TResponsePayload] = None,
     ):
         self.method, self.endpoint = endpoint.split(" ")
         self.response_cls = response_cls
@@ -87,6 +88,12 @@ class _NonRaisingHTTPErrorProcessor(HTTPErrorProcessor):
         return response
 
 
+def raise_coins_exception(data: typing.Optional[dict]) -> None:
+    if not data or "code" not in data or "msg" not in data:
+        return
+    raise CoinsAPIException(data["code"], data["msg"])
+
+
 class BlockingHTTPClient(HTTPClient):
     def do_request(
             self,
@@ -116,15 +123,14 @@ class BlockingHTTPClient(HTTPClient):
                 response.headers.get_content_charset("utf-8")
             )
             response_data = loads(text_content)
-            if response_data and "code" in response_data and "msg" in response_data:
-                raise CoinsAPIException(response_data["code"], response_data["msg"])
+            raise_coins_exception(response_data)
             if response.status >= 400:
                 raise HTTPException(
                     body=text_content,
                     headers={key.lower(): value for key, value in response.headers.items()},
                     status=response.status
                 )
-            return request.response_cls.from_dict(response_data)
+            return (request.response_cls or request_payload.expected_response()).from_dict(response_data)
 
 
 class AsyncIOHTTPClient(HTTPClient):
@@ -147,10 +153,9 @@ class AsyncIOHTTPClient(HTTPClient):
                         data=data or None, json=json or None, headers=headers
                 ) as response:
                     response_data = await response.json()
-                    if response_data and "code" in response_data and "msg" in response_data:
-                        raise CoinsAPIException(response_data["code"], response_data["msg"])
+                    raise_coins_exception(response_data)
                     response.raise_for_status()
-                    return request.response_cls.from_dict(response_data)
+                    return (request.response_cls or request_payload.expected_response()).from_dict(response_data)
         except HTTPError as e:
             raise HTTPException(
                 body=str(e.reason),

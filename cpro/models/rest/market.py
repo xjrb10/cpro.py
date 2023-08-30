@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 from datetime import datetime
+from decimal import *
 
 from dataclasses_json import dataclass_json, Undefined, config, DataClassJsonMixin
-from marshmallow.fields import Decimal
 
 
 @dataclass_json(undefined=Undefined.RAISE)

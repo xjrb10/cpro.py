@@ -1,9 +1,9 @@
 import typing
 from dataclasses import dataclass, field
 from datetime import datetime
+from decimal import *
 
 from dataclasses_json import dataclass_json, Undefined, DataClassJsonMixin, config
-from marshmallow.fields import Decimal
 
 from cpro.models.rest.enums import ExecutionTypes, OrderSides
 
@@ -136,13 +136,13 @@ class OrderUpdateData(UserStreamData):
         field_name="n"
     ))
     tradeID: int = field(metadata=config(
-            field_name="t"
+        field_name="t"
     ))
     isOrderOnBook: bool = field(metadata=config(
-            field_name="w"
+        field_name="w"
     ))
     isTradeMakerSide: bool = field(metadata=config(
-            field_name="m"
+        field_name="m"
     ))
     orderCreationTime: datetime = field(metadata=config(
         field_name="O",
@@ -170,3 +170,14 @@ class OrderUpdateData(UserStreamData):
             decoder=lambda _: datetime.fromtimestamp(_ / 1000.0) if _ > 0 else None
         )
     )
+
+
+def unmarshal_stream_data(data: dict) -> UserStreamData:
+    match data['e']:
+        case "outboundAccountPosition":
+            return AccountUpdateData.from_dict(data)
+        case "balanceUpdate":
+            return BalanceUpdateData.from_dict(data)
+        case "executionReport":
+            return OrderUpdateData.from_dict(data)
+    raise ValueError(f"Unhandled event: {data['e']}")
