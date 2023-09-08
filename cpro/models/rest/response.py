@@ -1,4 +1,5 @@
 import json
+import re
 import typing
 from abc import ABC
 from dataclasses import dataclass, field
@@ -9,12 +10,11 @@ from decimal import *
 
 from dataclasses_json import dataclass_json, config, Undefined, DataClassJsonMixin
 
-from cpro.models.rest.enums import OrderStatus, TimeInForceEnum, OrderTypes, OrderSides, AccountTransactionStatus, \
-    PaymentOptions
+from cpro.models.rest.enums import OrderStatus, TimeInForce, OrderTypes, OrderSides, AccountTransactionStatus, \
+    PaymentOptions, DeliveryStatus, SymbolStatus, OrderType, DepositStatus, WithdrawStatus
+from cpro.models.rest.filter import FilterOption, create_filter
 from cpro.models.rest.market import MarketOrder, TradeInfo, MarketDatapoint, TickerStatistics, \
     SymbolPriceTickerStatistics, SymbolOrderBookTickerStatistics, CryptoAssetTradingPair
-from cpro.models.rest.symbol import SymbolInfo
-from cpro.models.rest.wallet import Coin, DepositTransactionInfo, WithdrawTransactionInfo
 
 
 @dataclass(frozen=True)
@@ -34,33 +34,101 @@ class EmptyResponse(ResponsePayload):
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class PingResponse(EmptyResponse):
+    # https://coins-docs.github.io/rest-api/#test-connectivity
     pass
 
 
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class ServerTimeResponse(ResponsePayload):
+    # https://coins-docs.github.io/rest-api/#check-server-time
     serverTime: datetime = field(metadata=config(
         encoder=lambda _: int(_.timestamp() * 1000),
         decoder=lambda _: datetime.fromtimestamp(_ / 1000.0)
     ))
 
 
+@dataclass_json
+@dataclass(frozen=True)
+class SymbolInfo:
+    # https://coins-docs.github.io/rest-api/#exchange-information
+    symbol: str
+    status: SymbolStatus = field(metadata=config(
+        encoder=lambda _: _.lower(),
+        decoder=lambda _: _.upper()
+    ))
+    baseAsset: str
+    baseAssetPrecision: int
+    quoteAsset: str
+    quoteAssetPrecision: int
+    orderTypes: list[OrderType]
+    filters: list[FilterOption] = field(metadata=config(
+        encoder=lambda _: [__.to_dict() for __ in _],
+        decoder=lambda _: [create_filter(__) for __ in _]
+    ))
+
+
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class ExchangeInformationResponse(ResponsePayload):
+    # https://coins-docs.github.io/rest-api/#exchange-information
     timezone: str  # default: UTC - todo: currently this is ignored by the lib
     serverTime: datetime = field(metadata=config(
         encoder=lambda _: int(_.timestamp() * 1000),
-        decoder=lambda _: datetime.fromtimestamp(_ / 1000.0)  # todo: auto convert maybe-?
+        decoder=lambda _: datetime.fromtimestamp(_ / 1000.0)  # todo: auto convert to timezone maybe-?
     ))
     exchangeFilters: list  # empty -- Reason: https://coins-docs.github.io/rest-api/#exchange-filters
     symbols: list[SymbolInfo]
 
 
+@dataclass_json(undefined=Undefined.RAISE)
+@dataclass(frozen=True)
+class NetworkPayload:
+    # https://coins-docs.github.io/rest-api/#all-coins-information-user_data
+    addressRegex: re = field(
+        metadata=config(
+            encoder=lambda _: _.pattern,
+            decoder=lambda _: re.compile(_)
+        )
+    )
+    memoRegex: re = field(
+        metadata=config(
+            encoder=lambda _: _.pattern,
+            decoder=lambda _: re.compile(_)
+        )
+    )
+    network: str
+    name: str
+    depositEnable: bool
+    minConfirm: int
+    unLockConfirm: int
+    withdrawDesc: str
+    withdrawEnable: bool
+    withdrawFee: Decimal
+    withdrawIntegerMultiple: Decimal
+    withdrawMax: Decimal
+    withdrawMin: Decimal
+    sameAddress: bool
+
+
+@dataclass_json(undefined=Undefined.RAISE)
+@dataclass(frozen=True)
+class CoinPayload:
+    # https://coins-docs.github.io/rest-api/#all-coins-information-user_data
+    coin: str
+    name: str
+    depositAllEnable: bool
+    withdrawAllEnable: bool
+    free: Decimal
+    locked: Decimal
+    networkList: list[NetworkPayload]
+    legalMoney: bool
+
+
 @dataclass(frozen=True)
 class CoinsInformationResponse(ResponsePayload, DataClassJsonMixin):
-    coins: list[Coin]
+    # https://coins-docs.github.io/rest-api/#all-coins-information-user_data
+    coins: list[CoinPayload]
 
     @classmethod
     def from_dict(cls, kvs, *, infer_missing=False) -> "CoinsInformationResponse":
@@ -72,6 +140,7 @@ class CoinsInformationResponse(ResponsePayload, DataClassJsonMixin):
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class DepositAddressResponse(ResponsePayload):
+    # https://coins-docs.github.io/rest-api/#deposit-address-user_data
     coin: str
     address: str
     addressTag: str
@@ -80,11 +149,38 @@ class DepositAddressResponse(ResponsePayload):
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class WithdrawRequestResponse(ResponsePayload):
+    # https://coins-docs.github.io/rest-api/#withdrawuser_data
     id: int
+
+
+@dataclass_json(undefined=Undefined.RAISE)
+@dataclass(frozen=True)
+class _TransactionInfo:
+    id: str
+    amount: Decimal
+    coin: str
+    network: str
+    address: str
+    addressTag: str
+    txId: str
+    confirmNo: int
+
+
+@dataclass_json(undefined=Undefined.RAISE)
+@dataclass(frozen=True)
+class DepositTransactionInfo(_TransactionInfo):
+    status: DepositStatus
+    insertTime: datetime = field(
+        metadata=config(
+            encoder=lambda _: int(_.timestamp() * 1000),
+            decoder=lambda _: datetime.fromtimestamp(_ / 1000.0)
+        )
+    )
 
 
 @dataclass(frozen=True)
 class DepositHistoryResponse(ResponsePayload, DataClassJsonMixin):
+    # https://coins-docs.github.io/rest-api/#deposit-history-user_data
     transactions: list[DepositTransactionInfo]
 
     @classmethod
@@ -94,8 +190,24 @@ class DepositHistoryResponse(ResponsePayload, DataClassJsonMixin):
         return super().from_dict(kvs, infer_missing=infer_missing)
 
 
+@dataclass_json(undefined=Undefined.RAISE)
+@dataclass(frozen=True)
+class WithdrawTransactionInfo(_TransactionInfo):
+    status: WithdrawStatus
+    applyTime: datetime = field(
+        metadata=config(
+            encoder=lambda _: int(_.timestamp() * 1000),
+            decoder=lambda _: datetime.fromtimestamp(_ / 1000.0)
+        )
+    )
+    transactionFee: Decimal
+    withdrawOrderId: str
+    info: str
+
+
 @dataclass(frozen=True)
 class WithdrawHistoryResponse(ResponsePayload, DataClassJsonMixin):
+    # https://coins-docs.github.io/rest-api/#withdraw-history-user_data
     transactions: list[WithdrawTransactionInfo]
 
     @classmethod
@@ -108,6 +220,7 @@ class WithdrawHistoryResponse(ResponsePayload, DataClassJsonMixin):
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class OrderBookResponse(ResponsePayload):
+    # https://coins-docs.github.io/rest-api/#order-book
     lastUpdateId: int
     bids: list[MarketOrder] = field(
         metadata=config(
@@ -125,6 +238,7 @@ class OrderBookResponse(ResponsePayload):
 
 @dataclass(frozen=True)
 class RecentTradesResponse(ResponsePayload, DataClassJsonMixin):
+    # https://coins-docs.github.io/rest-api/#recent-trades-list
     trades: list[TradeInfo]
 
     @classmethod
@@ -136,6 +250,7 @@ class RecentTradesResponse(ResponsePayload, DataClassJsonMixin):
 
 @dataclass(frozen=True)
 class GraphDataResponse(ResponsePayload, DataClassJsonMixin):
+    # https://coins-docs.github.io/rest-api/#klinecandlestick-data
     datapoints: list[MarketDatapoint] = field(
         metadata=config(
             decoder=lambda _: [MarketDatapoint.from_dict({
@@ -164,6 +279,7 @@ class GraphDataResponse(ResponsePayload, DataClassJsonMixin):
 
 @dataclass(frozen=True)
 class DailyTickerResponse(ResponsePayload, DataClassJsonMixin):
+    # https://coins-docs.github.io/rest-api/#24hr-ticker-price-change-statistics
     tickers: list[TickerStatistics]
 
     @classmethod
@@ -175,6 +291,7 @@ class DailyTickerResponse(ResponsePayload, DataClassJsonMixin):
 
 @dataclass(frozen=True)
 class SymbolPriceTickerResponse(ResponsePayload, DataClassJsonMixin):
+    # https://coins-docs.github.io/rest-api/#symbol-price-ticker
     tickers: list[SymbolPriceTickerStatistics]
 
     @classmethod
@@ -186,6 +303,7 @@ class SymbolPriceTickerResponse(ResponsePayload, DataClassJsonMixin):
 
 @dataclass(frozen=True)
 class SymbolOrderBookTickerResponse(ResponsePayload, DataClassJsonMixin):
+    # https://coins-docs.github.io/rest-api/#symbol-order-book-ticker
     tickers: list[SymbolOrderBookTickerStatistics]
 
     @classmethod
@@ -197,6 +315,7 @@ class SymbolOrderBookTickerResponse(ResponsePayload, DataClassJsonMixin):
 
 @dataclass(frozen=True)
 class CryptoAssetTradingPairListResponse(ResponsePayload, DataClassJsonMixin):
+    # https://coins-docs.github.io/rest-api/#cryptoasset-trading-pairs
     pairs: list[CryptoAssetTradingPair]
 
     @classmethod
@@ -209,6 +328,7 @@ class CryptoAssetTradingPairListResponse(ResponsePayload, DataClassJsonMixin):
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class CryptoAssetCurrentPriceAverageResponse(ResponsePayload):
+    # https://coins-docs.github.io/rest-api/#current-average-price
     mins: int
     price: Decimal
 
@@ -216,6 +336,7 @@ class CryptoAssetCurrentPriceAverageResponse(ResponsePayload):
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class NewOrderResponse(ResponsePayload, ABC):
+    # https://coins-docs.github.io/rest-api/#new-order--trade
     pass
 
 
@@ -225,6 +346,7 @@ TNewOrderResponse = TypeVar("TNewOrderResponse", bound=NewOrderResponse)
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class NewOrderACKResponse(NewOrderResponse):
+    # https://coins-docs.github.io/rest-api/#new-order--trade
     symbol: str
     orderId: int
     clientOrderId: str
@@ -237,11 +359,12 @@ class NewOrderACKResponse(NewOrderResponse):
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class NewOrderRESULTResponse(NewOrderACKResponse):
+    # https://coins-docs.github.io/rest-api/#new-order--trade
     price: Decimal
     origQty: Decimal
     executedQty: Decimal
     status: OrderStatus
-    timeInForce: TimeInForceEnum
+    timeInForce: TimeInForce
     type: OrderTypes
     side: OrderSides
     stopPrice: Decimal
@@ -261,10 +384,16 @@ class OrderFill:
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class NewOrderFULLResponse(NewOrderRESULTResponse):
+    # https://coins-docs.github.io/rest-api/#new-order--trade
     fills: list[OrderFill]
 
 
 class _APIOrderResponse(ResponsePayload):
+    # https://coins-docs.github.io/rest-api/#query-order-user_data
+    # https://coins-docs.github.io/rest-api/#cancel-all-open-orders-on-a-symbol-trade
+    # https://coins-docs.github.io/rest-api/#current-open-orders-user_data
+    # https://coins-docs.github.io/rest-api/#history-orders-user_data
+    # https://coins-docs.github.io/rest-api/#cancel-order-trade
     symbol: str
     orderId: int
     clientOrderId: str
@@ -281,7 +410,7 @@ class _APIOrderResponse(ResponsePayload):
     executedQty: Decimal
     cummulativeQuoteQty: Decimal
     status: OrderStatus
-    timeInForce: TimeInForceEnum
+    timeInForce: TimeInForce
     type: OrderTypes
     side: OrderSides
     stopPrice: Decimal
@@ -291,17 +420,21 @@ class _APIOrderResponse(ResponsePayload):
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class QueryOrderResponse(_APIOrderResponse):
+    # https://coins-docs.github.io/rest-api/#query-order-user_data
     isWorking: bool
+    # all else inherited
 
 
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class CancelOrderResponse(_APIOrderResponse):
-    pass
+    # https://coins-docs.github.io/rest-api/#cancel-order-trade
+    pass  # all inherited
 
 
 @dataclass(frozen=True)
 class CancelledOrdersList(ResponsePayload, DataClassJsonMixin):
+    # https://coins-docs.github.io/rest-api/#cancel-all-open-orders-on-a-symbol-trade
     orders: list[_APIOrderResponse]
 
     @classmethod
@@ -313,6 +446,7 @@ class CancelledOrdersList(ResponsePayload, DataClassJsonMixin):
 
 @dataclass(frozen=True)
 class CurrentOpenOrdersResponse(ResponsePayload, DataClassJsonMixin):
+    # https://coins-docs.github.io/rest-api/#current-open-orders-user_data
     orders: list[QueryOrderResponse]
 
     @classmethod
@@ -324,6 +458,7 @@ class CurrentOpenOrdersResponse(ResponsePayload, DataClassJsonMixin):
 
 @dataclass(frozen=True)
 class OrderHistoryResponse(ResponsePayload, DataClassJsonMixin):
+    # https://coins-docs.github.io/rest-api/#history-orders-user_data
     orders: list[_APIOrderResponse]
 
     @classmethod
@@ -333,8 +468,31 @@ class OrderHistoryResponse(ResponsePayload, DataClassJsonMixin):
         return super().from_dict({"orders": [kvs]}, infer_missing=infer_missing)
 
 
+@dataclass_json(undefined=Undefined.RAISE)
+@dataclass(frozen=True)
+class CoinBalance:
+    asset: str
+    free: Decimal
+    locked: Decimal
+
+
+@dataclass(frozen=True)
+class AccountInformationResponse(ResponsePayload, DataClassJsonMixin):
+    # https://coins-docs.github.io/rest-api/#account-information-user_data
+    canTrade: bool
+    canWithdraw: bool
+    canDeposit: bool
+    accountType: str
+    updateTime: datetime = field(metadata=config(
+        encoder=lambda _: int(_.timestamp() * 1000),
+        decoder=lambda _: datetime.fromtimestamp(_ / 1000.0)
+    ))
+    balances: list[CoinBalance]
+
+
 @dataclass(frozen=True)
 class AccountTrade(ResponsePayload, DataClassJsonMixin):
+    # https://coins-docs.github.io/rest-api/#account-trade-list-user_data
     symbol: str
     id: int
     orderId: int
@@ -363,39 +521,21 @@ class AccountTradeListResponse(ResponsePayload, DataClassJsonMixin):
         return super().from_dict({"orders": [kvs]}, infer_missing=infer_missing)
 
 
-@dataclass_json(undefined=Undefined.RAISE)
-@dataclass(frozen=True)
-class CoinBalance:
-    asset: str
-    free: Decimal
-    locked: Decimal
-
-
-@dataclass(frozen=True)
-class AccountInformationResponse(ResponsePayload, DataClassJsonMixin):
-    canTrade: bool
-    canWithdraw: bool
-    canDeposit: bool
-    accountType: str
-    updateTime: datetime = field(metadata=config(
-        encoder=lambda _: int(_.timestamp() * 1000),
-        decoder=lambda _: datetime.fromtimestamp(_ / 1000.0)
-    ))
-    balances: list[CoinBalance]
-
-
 @dataclass(frozen=True)
 class CoinsPHWithdrawResponse(ResponsePayload, DataClassJsonMixin):
+    # https://coins-docs.github.io/rest-api/#withdraw-to-coins_ph-account-user_data
     id: int
 
 
 @dataclass(frozen=True)
 class CoinsPHDepositResponse(ResponsePayload, DataClassJsonMixin):
+    # https://coins-docs.github.io/rest-api/#deposit-to-exchange-account-user_data
     id: int
 
 
 @dataclass(frozen=True)
 class DepositOrderHistoryPayload(ResponsePayload, DataClassJsonMixin):
+    # https://coins-docs.github.io/rest-api/#deposit-order-historydeposit-order-which-deposit-from-coins_ph-to-exchange-user_data
     coin: str
     address: str
     addressTag: str
@@ -425,6 +565,7 @@ class DepositOrderHistoryResponse(ResponsePayload, DataClassJsonMixin):
 
 @dataclass(frozen=True)
 class WithdrawOrderHistoryPayload(ResponsePayload, DataClassJsonMixin):
+    # https://coins-docs.github.io/rest-api/#withdraw-order-history-withdrawal-order-which-withdraw-from-exchange-to-coins_ph-user_data
     coin: str
     address: str
     amount: Decimal
@@ -456,7 +597,8 @@ class WithdrawOrderHistoryResponse(ResponsePayload, DataClassJsonMixin):
 
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
-class TradeFee:
+class TradeFeePayload:
+    # https://coins-docs.github.io/rest-api/#trade-fee-user_data
     symbol: str
     makerCommission: Decimal
     takerCommission: Decimal
@@ -464,7 +606,7 @@ class TradeFee:
 
 @dataclass(frozen=True)
 class TradeFeeResponse(ResponsePayload, DataClassJsonMixin):
-    fees: list[TradeFee]
+    fees: list[TradeFeePayload]
 
     @classmethod
     def from_dict(cls, kvs, *, infer_missing=False) -> "TradeFeeResponse":
@@ -475,6 +617,10 @@ class TradeFeeResponse(ResponsePayload, DataClassJsonMixin):
 
 @dataclass(frozen=True)
 class PaymentRequestPayload(ResponsePayload, DataClassJsonMixin):
+    # https://coins-docs.github.io/rest-api/#payment-request-user_data
+    # https://coins-docs.github.io/rest-api/#get-payment-request
+    # https://coins-docs.github.io/rest-api/#cancel-payment-request
+    # https://coins-docs.github.io/rest-api/#send-reminder-for-payment-request
     message: str
     id: int
     invoice: int
@@ -511,9 +657,12 @@ class PaymentRequestPayload(ResponsePayload, DataClassJsonMixin):
 
 @dataclass(frozen=True)
 class InvoiceRequestPayload(ResponsePayload, DataClassJsonMixin):
+    # https://coins-docs.github.io/rest-api/#creating-invoices
+    # https://coins-docs.github.io/rest-api/#retrieving-invoices
+    # https://coins-docs.github.io/rest-api/#canceling-invoices
     id: str
     amount: Decimal
-    amount_due: str  # todo: verify, no type on docs
+    amount_due: Decimal  # todo: verify, no type on docs
     currency: str
     status: AccountTransactionStatus  # todo: verify, no type on docs
     external_transaction_id: str
@@ -546,21 +695,22 @@ class InvoiceRequestPayload(ResponsePayload, DataClassJsonMixin):
         return super().from_dict(kvs, infer_missing=infer_missing)
 
 
+@dataclass(frozen=True)
+class StatusedAPIResponse(ResponsePayload, DataClassJsonMixin):
+    status: str  # no docs, unknown enum values EX: "Success"
+    error: str  # no docs, unknown enum values EX: "OK"
+    params: None  # TODO: NO DOCS Ex: null
+
+
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class TradingPairPayload:
+    # https://coins-docs.github.io/rest-api/#get-supported-trading-pairs
     sourceCurrency: str
     targetCurrency: str
     minSourceAmount: Decimal
     maxSourceAmount: Decimal
     precision: Decimal
-
-
-@dataclass(frozen=True)
-class StatusedAPIResponse(ResponsePayload, DataClassJsonMixin):
-    status: str  # no docs, unknown enum values
-    error: str  # no docs, unknown enum values
-    params: None  # NO DOCS
 
 
 @dataclass(frozen=True)
@@ -571,6 +721,7 @@ class SupportedTradingPairsResponse(StatusedAPIResponse):
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class QuotePayload:
+    # https://coins-docs.github.io/rest-api/#fetch-a-quote
     quoteId: str
     sourceCurrency: str
     targetCurrency: str
@@ -582,24 +733,55 @@ class QuotePayload:
 
 @dataclass(frozen=True)
 class FetchQuoteResponse(StatusedAPIResponse):
-    data: list[QuotePayload]
+    data: QuotePayload
 
 
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class QuoteAcceptancePayload:
+    # https://coins-docs.github.io/rest-api/#accept-the-quote
     orderId: str
     status: str  # enum with unknown values, ex: "SUCCESS"
 
 
 @dataclass(frozen=True)
 class QuoteAcceptanceResponse(StatusedAPIResponse):
-    data: list[QuoteAcceptancePayload]
+    data: QuoteAcceptancePayload
+
+
+@dataclass_json(undefined=Undefined.RAISE)
+@dataclass(frozen=True)
+class RetrieveOrderHistoryPayload:
+    # https://coins-docs.github.io/rest-api/#retrieve-order-history
+    id: str
+    orderId: str
+    quoteId: str
+    userId: str
+    sourceCurrency: str
+    sourceCurrencyIcon: str
+    targetCurrency: str
+    targetCurrencyIcon: str
+    sourceAmount: Decimal
+    targetAmount: Decimal
+    price: Decimal
+    status: DeliveryStatus
+    createdAt: datetime = field(metadata=config(
+        encoder=lambda _: int(_.timestamp() * 1000),
+        decoder=lambda _: datetime.fromtimestamp(_ / 1000.0)
+    ))
+    errorCode: str
+    errorMessage: str
+
+
+@dataclass(frozen=True)
+class RetrieveOrderHistoryResponse(StatusedAPIResponse):
+    data: list[RetrieveOrderHistoryPayload]
 
 
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class SupportedFiatChannelPayload:
+    # https://coins-docs.github.io/rest-api/#get-supported-fiat-channels
     id: int
     transactionChannel: str
     transactionChannelName: str
@@ -631,14 +813,21 @@ class SupportedFiatChannelResponse(StatusedAPIResponse):
 
 
 @dataclass(frozen=True)
-class CashOutResponse(StatusedAPIResponse):
+class CashOutPayload(StatusedAPIResponse):
+    # https://coins-docs.github.io/rest-api/#cash-out
     externalOrderId: int
     internalOrderId: int
+
+
+@dataclass(frozen=True)
+class CashOutResponse(StatusedAPIResponse):
+    data: CashOutPayload
 
 
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class FiatOrderDetailPayload:
+    # https://coins-docs.github.io/rest-api/#fiat-order-detail
     id: int
     orderId: int
     paymentOrderId: int
@@ -664,6 +853,7 @@ class FiatOrderDetailPayload:
 
 @dataclass(frozen=True)
 class FiatOrderDetailResponse(StatusedAPIResponse):
+    # https://coins-docs.github.io/rest-api/#fiat-order-detail
     data: FiatOrderDetailPayload
     dealCancel: bool
 
@@ -671,6 +861,7 @@ class FiatOrderDetailResponse(StatusedAPIResponse):
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass(frozen=True)
 class FiatOrderHistoryPayload:
+    # https://coins-docs.github.io/rest-api/#fiat-order-history
     externalOrderId: int
     internalOrderId: int
     paymentOrderId: int
@@ -697,5 +888,6 @@ class FiatOrderHistoryPayload:
 
 @dataclass(frozen=True)
 class FiatOrderHistoryResponse(StatusedAPIResponse):
+    # https://coins-docs.github.io/rest-api/#fiat-order-history
     data: list[FiatOrderHistoryPayload]
     total: int

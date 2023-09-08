@@ -62,7 +62,8 @@ class SecurityType(AutoStrEnum):
     USER_STREAM = auto()
     # Endpoint requires sending a valid API Key.
     MARKET_DATA = auto()
-    # Endpoint requires sending a valid Merchant API Key and Merchant signature.  todo: SEPARATE THIS
+    # Endpoint requires sending a valid Merchant API Key and Merchant signature.
+    # todo: SEPARATE THIS, THIS DOES NOT EXIST IN THE API
     MERCHANT = auto()
 
     def is_signed(self) -> bool:
@@ -154,7 +155,7 @@ class OrderTypes(AutoStrEnum):
     LIMIT_MAKER = auto()  # Add: quantity, price
 
 
-class TimeInForceEnum(Enum):
+class TimeInForce(Enum):
     GOOD_TIL_CANCELLED = "GTC"
     IMMEDIATE_OR_CANCEL = "IOC"
     FILL_OR_KILL = "FOK"
@@ -213,3 +214,10 @@ class AccountTransactionStatus(Enum):
 
 class PaymentOptions(AutoLowercaseStrEnum):
     COINS_PESO_WALLET = auto()
+
+
+class DeliveryStatus(AutoStrEnum):
+    TODO = auto()
+    SUCCESS = auto()
+    FAILED = auto()
+    PROCESSING = auto()

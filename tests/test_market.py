@@ -5,8 +5,8 @@ import pytest
 from cpro.client.rest import BlockingHTTPClient, HTTPClient, AsyncIOHTTPClient
 from cpro.models.rest.endpoints import APIEndpoints
 from cpro.models.rest.enums import ChartIntervals
-from cpro.models.rest.request import OrderBookRequest, RecentTradesRequest, GraphDataRequest, DailyTickerRequest, \
-    SymbolPriceTickerRequest, SymbolOrderBookTickerRequest, CryptoAssetCurrentPriceAverageRequest
+from cpro.models.rest.request import OrderBookRequest, RecentTradesRequest, GraphDataRequest, DailyTickerTickerRequest, \
+    SymbolPriceTickerTickerRequest, SymbolOrderBookTickerTickerRequest, CryptoAssetCurrentPriceAverageRequest
 from cpro.models.rest.response import OrderBookResponse, RecentTradesResponse, GraphDataResponse, DailyTickerResponse, \
     SymbolPriceTickerResponse, SymbolOrderBookTickerResponse, CryptoAssetCurrentPriceAverageResponse, \
     CryptoAssetTradingPairListResponse
@@ -55,7 +55,7 @@ async def test_get_graph_data(client: HTTPClient):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("client", [blocking_client, async_client])
 async def test_get_daily_ticker(client: HTTPClient):
-    response: DailyTickerResponse = await _test_endpoint(client, APIEndpoints.GET_DAILY_TICKER, DailyTickerRequest())
+    response: DailyTickerResponse = await _test_endpoint(client, APIEndpoints.GET_DAILY_TICKER, DailyTickerTickerRequest())
 
     assert isinstance(response, DailyTickerResponse)
     assert isinstance(response.to_dict(), dict)
@@ -66,7 +66,7 @@ async def test_get_daily_ticker(client: HTTPClient):
 async def test_get_symbol_price_ticker(client: HTTPClient):
     response: SymbolPriceTickerResponse = await _test_endpoint(
         client, APIEndpoints.GET_SYMBOL_PRICE_TICKER,
-        SymbolPriceTickerRequest()
+        SymbolPriceTickerTickerRequest()
     )
 
     assert isinstance(response, SymbolPriceTickerResponse)
@@ -78,7 +78,7 @@ async def test_get_symbol_price_ticker(client: HTTPClient):
 async def test_get_symbol_order_book_ticker(client: HTTPClient):
     response: SymbolOrderBookTickerResponse = await _test_endpoint(
         client, APIEndpoints.GET_SYMBOL_ORDER_BOOK_TICKER,
-        SymbolOrderBookTickerRequest()
+        SymbolOrderBookTickerTickerRequest()
     )
 
     assert isinstance(response, SymbolOrderBookTickerResponse)

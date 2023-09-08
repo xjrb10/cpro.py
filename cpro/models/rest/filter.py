@@ -30,6 +30,8 @@ class PriceFilter(FilterOption):
     price >= minPrice
     price <= maxPrice
     (price-minPrice) % tickSize == 0
+
+    LINK: https://coins-docs.github.io/rest-api/#price_filter
     """
     minPrice: Decimal
     maxPrice: Decimal
@@ -51,6 +53,8 @@ class PercentPriceFilter(FilterOption):
 
     price <= weightedAveragePrice * multiplierUp
     price >= weightedAveragePrice * multiplierDown
+
+    LINK: https://coins-docs.github.io/rest-api/#percent_price
     """
     multiplierUp: Decimal
     multiplierDown: Decimal
@@ -77,6 +81,8 @@ class PercentPriceSAFilter(FilterOption):
 
     price <= simpleAveragePrice * multiplierUp
     price >= simpleAveragePrice * multiplierDown
+
+    LINK: https://coins-docs.github.io/rest-api/#percent_price
     """
     multiplierUp: Decimal
     multiplierDown: Decimal
@@ -112,6 +118,8 @@ class PercentPriceBySideFilter(FilterOption):
 
     Order Price <= askMultiplierUp * lastPrice
     Order Price >= askMultiplierDown * lastPrice
+
+    LINK: https://coins-docs.github.io/rest-api/#percent_price_by_side
     """
     bidMultiplierUp: Decimal
     bidMultiplierDown: Decimal
@@ -144,6 +152,8 @@ class PercentPriceIndexFilter(FilterOption):
 
     price <= indexPrice * multiplierUp
     price >= indexPrice * multiplierDown
+
+    LINK: https://coins-docs.github.io/rest-api/#percent_price_index
     """
     multiplierUp: Decimal
     multiplierDown: Decimal
@@ -171,6 +181,8 @@ class PercentPriceOrderSizeFilter(FilterOption):
 
     A buy order needs to meet: the market price after the order get filled <askPrice * multiplierUp
     A sell order needs to meet: the market price after the order get filled >bidPrice * multiplierDown
+
+    LINK: https://coins-docs.github.io/rest-api/#percent_price_order_size
     """
     multiplierUp: Decimal
     multiplierDown: Decimal
@@ -197,6 +209,8 @@ class StaticPriceRangeFilter(FilterOption):
 
     price <= priceUp
     price >= priceDown
+
+    LINK: https://coins-docs.github.io/rest-api/#static_price_range
     """
     priceUp: Decimal
     priceDown: Decimal
@@ -228,6 +242,8 @@ class LotSizeFilter(FilterOption):
     quantity >= minQty
     quantity <= maxQty
     (quantity-minQty) % stepSize == 0
+
+    LINK: https://coins-docs.github.io/rest-api/#lot_size
     """
     minQty: Decimal
     maxQty: Decimal
@@ -256,6 +272,8 @@ class NotionalFilter(FilterOption):
 
     price * quantity <= maxNotional
     price * quantity >= minNotional
+
+    LINK: https://coins-docs.github.io/rest-api/#notional
     """
     minNotional: Decimal
     maxNotional: Decimal
@@ -276,7 +294,13 @@ class NotionalFilter(FilterOption):
 @dataclass(frozen=True)
 class MinNotionalFilter(FilterOption):
     """
-    undocumented
+    !! NO DOCUMENTATION !!
+
+    REFERENCE: https://coins-docs.github.io/rest-api/#exchange-information
+    {
+        "filterType": "MIN_NOTIONAL",
+        "minNotional": "0.00100000"
+    },
     """
     minNotional: Decimal
 
@@ -297,6 +321,8 @@ class MaxNumOrdersFilter(FilterOption):
     """
     The MAX_NUM_ORDERS filter defines the maximum number of orders an account is allowed to have open on a symbol.
     Note that both triggered “algo” orders and normal orders are counted for this filter.
+
+    LINK: https://coins-docs.github.io/rest-api/#max_num_orders
     """
     maxNumOrders: int
 
@@ -317,6 +343,8 @@ class MaxNumAlgoOrdersFilter(FilterOption):
     """
     The MAX_NUM_ORDERS filter defines the maximum number of orders an account is allowed to have open on a symbol.
     Note that both triggered “algo” orders and normal orders are counted for this filter.
+
+    LINK: https://coins-docs.github.io/rest-api/#max_num_algo_orders
     """
     maxNumAlgoOrders: int
 

@@ -5,18 +5,21 @@ from cpro.client.rest import APIEndpoint, HTTPClient
 from cpro.models.rest.enums import SecurityType
 from cpro.models.rest.request import CoinsInformationRequest, DepositAddressRequest, DepositHistoryRequest, \
     WithdrawHistoryRequest, RequestPayload, OrderBookRequest, RecentTradesRequest, GraphDataRequest, \
-    DailyTickerRequest, SymbolPriceTickerRequest, SymbolOrderBookTickerRequest, CryptoAssetCurrentPriceAverageRequest, \
-    NewOrderRequest, QueryOrderRequest, CancelOrderRequest, CancelAllOpenOrdersRequest, CurrentOpenOrdersRequest, \
+    DailyTickerTickerRequest, SymbolPriceTickerTickerRequest, SymbolOrderBookTickerTickerRequest, \
+    CryptoAssetCurrentPriceAverageRequest, \
+    NewOrderRequest, QuerySingleOrderRequest, CancelSingleOrderRequest, CancelAllOpenOrdersRequest, \
+    CurrentOpenOrdersRequest, \
     OrderHistoryRequest, AccountInformationRequest, AccountTradesRequest, CoinsPHWithdrawRequest, CoinsPHDepositRequest, \
     DepositOrderHistoryRequest, WithdrawOrderHistoryRequest, TradeFeeRequest, CreatePaymentRequestRequest, \
     GetPaymentRequestRequest, CancelPaymentRequestRequest, SendPaymentRequestReminderRequest, CreateInvoiceRequest, \
     GetInvoicesRequest, CancelInvoiceRequest, QuoteFetchRequest, QuoteAcceptRequest, \
     SupportedFiatPaymentChannelsRequest, CashOutRequest, FiatOrderDetailRequest, FiatOrderHistoryRequest, \
-    WithdrawRequest
+    WithdrawRequest, RetrieveOrderHistoryRequest
 from cpro.models.rest.response import PingResponse, ExchangeInformationResponse, ServerTimeResponse, TResponsePayload, \
     CryptoAssetTradingPairListResponse, EmptyResponse, QuoteAcceptanceResponse
 
 
+# todo: split this into separate modules perhaps
 class APIEndpoints(Enum):
     GET_PING = APIEndpoint("GET /openapi/v1/ping", response_cls=PingResponse)
     GET_SERVER_TIME = APIEndpoint("GET /openapi/v1/time", response_cls=ServerTimeResponse)
@@ -56,15 +59,15 @@ class APIEndpoints(Enum):
     )
     GET_DAILY_TICKER = APIEndpoint(
         "GET /openapi/quote/v1/ticker/24hr",
-        DailyTickerRequest
+        DailyTickerTickerRequest
     )
     GET_SYMBOL_PRICE_TICKER = APIEndpoint(
         "GET /openapi/quote/v1/ticker/price",
-        SymbolPriceTickerRequest
+        SymbolPriceTickerTickerRequest
     )
     GET_SYMBOL_ORDER_BOOK_TICKER = APIEndpoint(
         "GET /openapi/quote/v1/ticker/bookTicker",
-        SymbolOrderBookTickerRequest
+        SymbolOrderBookTickerTickerRequest
     )
     GET_CRYPTO_ASSET_CURRENT_PRICE_AVERAGE = APIEndpoint(
         "GET /openapi/quote/v1/avgPrice",
@@ -85,11 +88,11 @@ class APIEndpoints(Enum):
     )
     QUERY_ORDER = APIEndpoint(
         "GET /openapi/v1/order",
-        QueryOrderRequest, SecurityType.USER_DATA
+        QuerySingleOrderRequest, SecurityType.USER_DATA
     )
     CANCEL_ORDER = APIEndpoint(
         "DELETE /openapi/v1/order",
-        CancelOrderRequest, SecurityType.TRADE
+        CancelSingleOrderRequest, SecurityType.TRADE
     )
     CANCEL_OPEN_ORDERS = APIEndpoint(
         "DELETE /openapi/v1/openOrders",
@@ -131,32 +134,32 @@ class APIEndpoints(Enum):
         "GET /openapi/v1/asset/tradeFee",
         TradeFeeRequest, SecurityType.USER_DATA
     )
-    CREATE_PAYMENT_REQUEST = APIEndpoint(
+    PAYMENT_REQUEST_CREATE = APIEndpoint(
         "POST /openapi/v3/payment-request/payment-requests",
         CreatePaymentRequestRequest, SecurityType.USER_DATA
     )
-    GET_PAYMENT_REQUEST = APIEndpoint(
+    PAYMENT_REQUEST_INFO = APIEndpoint(
         "GET /openapi/v3/payment-request/get-payment-request",
         GetPaymentRequestRequest, SecurityType.USER_DATA
     )
-    CANCEL_PAYMENT_REQUEST = APIEndpoint(
+    PAYMENT_REQUEST_CANCEL = APIEndpoint(
         "POST /openapi/v3/payment-request/delete-payment-request",
         CancelPaymentRequestRequest, SecurityType.USER_DATA
     )
-    SEND_PAYMENT_REQUEST_REMINDER = APIEndpoint(
+    PAYMENT_REQUEST_SEND_REMINDER = APIEndpoint(
         "POST /openapi/v3/payment-request/payment-request-reminder",
         SendPaymentRequestReminderRequest, SecurityType.USER_DATA
     )
     # todo: separate the merchant API into its own part of the library, with callback support (NO DOCS)
-    CREATE_INVOICE = APIEndpoint(
+    MERCHANT_CREATE_INVOICE = APIEndpoint(
         "POST /merchant-api/v1/invoices",
         CreateInvoiceRequest, SecurityType.MERCHANT
     )
-    GET_INVOICE = APIEndpoint(
+    MERCHANT_GET_INVOICE = APIEndpoint(
         "GET /merchant-api/v1/get-invoices",
         GetInvoicesRequest, SecurityType.MERCHANT
     )
-    CANCEL_INVOICE = APIEndpoint(
+    MERCHANT_CANCEL_INVOICE = APIEndpoint(
         "POST /merchant-api/v1/invoices-cancel",
         CancelInvoiceRequest, SecurityType.MERCHANT
     )
@@ -170,6 +173,10 @@ class APIEndpoints(Enum):
     CONVERSION_ACCEPT_QUOTE = APIEndpoint(
         "POST /openapi/convert/v1/accept-quote",
         QuoteAcceptRequest
+    )
+    CONVERSION_GET_ORDER_HISTORY = APIEndpoint(
+        "POST /openapi/convert/v1/query-order-history",
+        RetrieveOrderHistoryRequest
     )
     FIAT_GET_SUPPORTED_PAYMENT_CHANNELS = APIEndpoint(
         "POST /openapi/fiat/v1/support-channel",

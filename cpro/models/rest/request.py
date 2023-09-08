@@ -11,17 +11,17 @@ from decimal import *
 
 from dataclasses_json import DataClassJsonMixin, config
 
-from cpro.models.rest.enums import DepositStatus, ChartIntervals, OrderSides, OrderTypes, TimeInForceEnum, \
-    OrderResponseTypes, AntiSelfTradingBehaviours, ExchangeOrderStatus, PaymentOptions
+from cpro.models.rest.enums import DepositStatus, ChartIntervals, OrderSides, OrderTypes, TimeInForce, \
+    OrderResponseTypes, AntiSelfTradingBehaviours, ExchangeOrderStatus, PaymentOptions, DeliveryStatus
 from cpro.models.rest.response import TResponsePayload, CoinsInformationResponse, DepositAddressResponse, \
     WithdrawHistoryResponse, OrderBookResponse, RecentTradesResponse, GraphDataResponse, DailyTickerResponse, \
-    SymbolPriceTickerResponse, SymbolOrderBookTickerResponse, CryptoAssetCurrentPriceAverageResponse, NewOrderResponse, \
-    NewOrderACKResponse, NewOrderRESULTResponse, NewOrderFULLResponse, QueryOrderResponse, CancelOrderResponse, \
-    CancelledOrdersList, CurrentOpenOrdersResponse, OrderHistoryResponse, AccountInformationResponse, \
-    AccountTradeListResponse, CoinsPHWithdrawResponse, CoinsPHDepositResponse, DepositOrderHistoryResponse, \
-    PaymentRequestPayload, InvoiceRequestPayload, WithdrawOrderHistoryResponse, TradeFeeResponse, FetchQuoteResponse, \
-    SupportedFiatChannelResponse, QuoteAcceptanceResponse, CashOutResponse, FiatOrderDetailResponse, \
-    WithdrawRequestResponse
+    SymbolPriceTickerResponse, SymbolOrderBookTickerResponse, CryptoAssetCurrentPriceAverageResponse, \
+    NewOrderResponse, NewOrderACKResponse, NewOrderRESULTResponse, NewOrderFULLResponse, QueryOrderResponse, \
+    CancelOrderResponse, CancelledOrdersList, CurrentOpenOrdersResponse, OrderHistoryResponse, \
+    AccountInformationResponse, AccountTradeListResponse, CoinsPHWithdrawResponse, CoinsPHDepositResponse, \
+    DepositOrderHistoryResponse, PaymentRequestPayload, InvoiceRequestPayload, WithdrawOrderHistoryResponse, \
+    TradeFeeResponse, FetchQuoteResponse, SupportedFiatChannelResponse, QuoteAcceptanceResponse, CashOutResponse, \
+    FiatOrderDetailResponse, WithdrawRequestResponse
 
 
 @dataclass
@@ -79,7 +79,7 @@ TRequestPayload = typing.TypeVar("TRequestPayload", bound=RequestPayload)
 
 
 @dataclass(frozen=True)
-class _OptionallyBatchedRequest(RequestPayload):
+class _OptionallyBatchedTickerRequest(RequestPayload):
     symbol: typing.Optional[str] = None
     symbols: typing.Optional[typing.List[str]] = field(
         default=None,
@@ -96,7 +96,7 @@ class _OptionallyBatchedRequest(RequestPayload):
 
 
 @dataclass(frozen=True)
-class ExchangeInformationRequest(_OptionallyBatchedRequest):
+class ExchangeInformationTickerRequest(_OptionallyBatchedTickerRequest):
     pass
 
 
@@ -131,6 +131,7 @@ class DepositAddressRequest(RequestPayload):
     def expected_response(self) -> typing.Type[DepositAddressResponse]:
         return DepositAddressResponse
 
+
 @dataclass(frozen=True)
 class WithdrawRequest(RequestPayload):
     coin: str
@@ -147,7 +148,7 @@ class WithdrawRequest(RequestPayload):
         )
     )
 
-    def expected_response(self) -> typing.Type[DepositAddressResponse]:
+    def expected_response(self) -> typing.Type[WithdrawRequestResponse]:
         return WithdrawRequestResponse
 
 
@@ -199,6 +200,7 @@ class WithdrawHistoryRequest(TransactionHistoryRequest):
 
 @dataclass(frozen=True)
 class OrderBookRequest(RequestPayload):
+    # https://coins-docs.github.io/rest-api/#order-book
     symbol: str = None
     limit: int = 100
 
@@ -208,6 +210,7 @@ class OrderBookRequest(RequestPayload):
 
 @dataclass(frozen=True)
 class RecentTradesRequest(RequestPayload):
+    # https://coins-docs.github.io/rest-api/#recent-trades-list
     symbol: str
     interval: int = 500
 
@@ -217,6 +220,7 @@ class RecentTradesRequest(RequestPayload):
 
 @dataclass(frozen=True)
 class GraphDataRequest(RequestPayload):
+    # https://coins-docs.github.io/rest-api/#klinecandlestick-data
     symbol: str
     interval: ChartIntervals
     startTime: typing.Optional[datetime] = field(
@@ -240,21 +244,24 @@ class GraphDataRequest(RequestPayload):
 
 
 @dataclass(frozen=True)
-class DailyTickerRequest(_OptionallyBatchedRequest):
+class DailyTickerTickerRequest(_OptionallyBatchedTickerRequest):
+    # https://coins-docs.github.io/rest-api/#24hr-ticker-price-change-statistics
 
     def expected_response(self) -> typing.Type[DailyTickerResponse]:
         return DailyTickerResponse
 
 
 @dataclass(frozen=True)
-class SymbolPriceTickerRequest(_OptionallyBatchedRequest):
+class SymbolPriceTickerTickerRequest(_OptionallyBatchedTickerRequest):
+    # https://coins-docs.github.io/rest-api/#symbol-price-ticker
 
     def expected_response(self) -> typing.Type[SymbolPriceTickerResponse]:
         return SymbolPriceTickerResponse
 
 
 @dataclass(frozen=True)
-class SymbolOrderBookTickerRequest(_OptionallyBatchedRequest):
+class SymbolOrderBookTickerTickerRequest(_OptionallyBatchedTickerRequest):
+    # https://coins-docs.github.io/rest-api/#symbol-order-book-ticker
 
     def expected_response(self) -> typing.Type[SymbolOrderBookTickerResponse]:
         return SymbolOrderBookTickerResponse
@@ -262,6 +269,7 @@ class SymbolOrderBookTickerRequest(_OptionallyBatchedRequest):
 
 @dataclass(frozen=True)
 class CryptoAssetCurrentPriceAverageRequest(RequestPayload):
+    # https://coins-docs.github.io/rest-api/#current-average-price
     symbol: str
 
     def expected_response(self) -> typing.Type[CryptoAssetCurrentPriceAverageResponse]:
@@ -282,7 +290,7 @@ class NewOrderRequest(RequestPayload):
         )
     )
 
-    timeInForce: typing.Optional[TimeInForceEnum] = None
+    timeInForce: typing.Optional[TimeInForce] = None
     quantity: typing.Optional[Decimal] = None
     quoteOrderQty: typing.Optional[Decimal] = None
     price: typing.Optional[Decimal] = None
@@ -323,7 +331,7 @@ class NewOrderRequest(RequestPayload):
 
 
 @dataclass(frozen=True)
-class QueryOrderRequest(RequestPayload):
+class _SingleOrderRequest(RequestPayload):
     orderId: typing.Optional[int] = None
     origClientOrderId: typing.Optional[str] = None
     recvWindow: typing.Optional[int] = None
@@ -335,29 +343,23 @@ class QueryOrderRequest(RequestPayload):
         )
     )
 
+
+@dataclass(frozen=True)
+class QuerySingleOrderRequest(_SingleOrderRequest):
+    # https://coins-docs.github.io/rest-api/#query-order-user_data
     def expected_response(self) -> typing.Type[TResponsePayload]:
         return QueryOrderResponse
 
 
 @dataclass(frozen=True)
-class CancelOrderRequest(RequestPayload):
-    orderId: typing.Optional[int] = None
-    origClientOrderId: typing.Optional[str] = None
-    recvWindow: typing.Optional[int] = None
-    timestamp: typing.Optional[datetime] = field(
-        default_factory=datetime.now,
-        metadata=config(
-            encoder=lambda _: _ and int(_.timestamp() * 1000),
-            decoder=lambda _: datetime.fromtimestamp(_ / 1000.0)
-        )
-    )
-
+class CancelSingleOrderRequest(_SingleOrderRequest):
+    # https://coins-docs.github.io/rest-api/#cancel-order-trade
     def expected_response(self) -> typing.Type[TResponsePayload]:
         return CancelOrderResponse
 
 
 @dataclass(frozen=True)
-class CancelAllOpenOrdersRequest(RequestPayload):
+class _AllOrdersRequest(RequestPayload):
     symbol: str
     recvWindow: typing.Optional[int] = None
     timestamp: typing.Optional[datetime] = field(
@@ -368,28 +370,24 @@ class CancelAllOpenOrdersRequest(RequestPayload):
         )
     )
 
+
+@dataclass(frozen=True)
+class CancelAllOpenOrdersRequest(_AllOrdersRequest):
+    # https://coins-docs.github.io/rest-api/#cancel-all-open-orders-on-a-symbol-trade
     def expected_response(self) -> typing.Type[TResponsePayload]:
         return CancelledOrdersList
 
 
 @dataclass(frozen=True)
-class CurrentOpenOrdersRequest(RequestPayload):
-    symbol: str
-    recvWindow: typing.Optional[int] = None
-    timestamp: typing.Optional[datetime] = field(
-        default_factory=datetime.now,
-        metadata=config(
-            encoder=lambda _: _ and int(_.timestamp() * 1000),
-            decoder=lambda _: datetime.fromtimestamp(_ / 1000.0)
-        )
-    )
-
+class CurrentOpenOrdersRequest(_AllOrdersRequest):
+    # https://coins-docs.github.io/rest-api/#current-open-orders-user_data
     def expected_response(self) -> typing.Type[TResponsePayload]:
         return CurrentOpenOrdersResponse
 
 
 @dataclass(frozen=True)
 class OrderHistoryRequest(RequestPayload):
+    # https://coins-docs.github.io/rest-api/#history-orders-user_data
     symbol: str
     orderId: typing.Optional[int] = None
     startTime: typing.Optional[datetime] = field(
@@ -422,6 +420,7 @@ class OrderHistoryRequest(RequestPayload):
 
 @dataclass(frozen=True)
 class AccountInformationRequest(RequestPayload):
+    # https://coins-docs.github.io/rest-api/#account-information-user_data
     recvWindow: typing.Optional[int] = None
     timestamp: typing.Optional[datetime] = field(
         default_factory=datetime.now,
@@ -437,6 +436,7 @@ class AccountInformationRequest(RequestPayload):
 
 @dataclass(frozen=True)
 class AccountTradesRequest(RequestPayload):
+    # https://coins-docs.github.io/rest-api/#account-trade-list-user_data
     symbol: str
     orderId: typing.Optional[int] = None
     startTime: typing.Optional[datetime] = field(
@@ -470,6 +470,7 @@ class AccountTradesRequest(RequestPayload):
 
 @dataclass(frozen=True)
 class CoinsPHWithdrawRequest(RequestPayload):
+    # https://coins-docs.github.io/rest-api/#withdraw-to-coins_ph-account-user_data
     coin: str
     amount: Decimal
     withdrawOrderId: str
@@ -488,6 +489,7 @@ class CoinsPHWithdrawRequest(RequestPayload):
 
 @dataclass(frozen=True)
 class CoinsPHDepositRequest(RequestPayload):
+    # https://coins-docs.github.io/rest-api/#deposit-to-exchange-account-user_data
     coin: str
     amount: Decimal
     depositOrderId: str
@@ -506,6 +508,7 @@ class CoinsPHDepositRequest(RequestPayload):
 
 @dataclass(frozen=True)
 class DepositOrderHistoryRequest(RequestPayload):
+    # https://coins-docs.github.io/rest-api/#deposit-order-historydeposit-order-which-deposit-from-coins_ph-to-exchange-user_data
     coin: str
     depositOrderId: str
     status: ExchangeOrderStatus
@@ -540,6 +543,7 @@ class DepositOrderHistoryRequest(RequestPayload):
 
 @dataclass(frozen=True)
 class WithdrawOrderHistoryRequest(RequestPayload):
+    # https://coins-docs.github.io/rest-api/#withdraw-order-history-withdrawal-order-which-withdraw-from-exchange-to-coins_ph-user_data
     coin: str
     withdrawOrderId: str
     status: ExchangeOrderStatus
@@ -574,6 +578,7 @@ class WithdrawOrderHistoryRequest(RequestPayload):
 
 @dataclass(frozen=True)
 class TradeFeeRequest(RequestPayload):
+    # https://coins-docs.github.io/rest-api/#trade-fee-user_data
     symbol: str
     recvWindow: typing.Optional[int] = None
     timestamp: typing.Optional[datetime] = field(
@@ -590,6 +595,8 @@ class TradeFeeRequest(RequestPayload):
 
 @dataclass(frozen=True)
 class CreatePaymentRequestRequest(RequestPayload):
+    # https://coins-docs.github.io/rest-api/#payment-request-user_data
+
     # The contact information, typically an email address, to which the payment request should be sent.
     payer_contact_info: str
 
@@ -633,6 +640,7 @@ class CreatePaymentRequestRequest(RequestPayload):
 
 @dataclass(frozen=True)
 class GetPaymentRequestRequest(RequestPayload):
+    # https://coins-docs.github.io/rest-api/#get-payment-request
     id: int = None
     start_time: int = None
     end_time: int = None
@@ -644,6 +652,7 @@ class GetPaymentRequestRequest(RequestPayload):
 
 @dataclass(frozen=True)
 class CancelPaymentRequestRequest(RequestPayload):
+    # https://coins-docs.github.io/rest-api/#cancel-payment-request
     id: int
 
     def expected_response(self) -> typing.Type[TResponsePayload]:
@@ -652,6 +661,7 @@ class CancelPaymentRequestRequest(RequestPayload):
 
 @dataclass(frozen=True)
 class SendPaymentRequestReminderRequest(RequestPayload):
+    # https://coins-docs.github.io/rest-api/#send-reminder-for-payment-request
     id: int
 
     def expected_response(self) -> typing.Type[TResponsePayload]:
@@ -660,6 +670,8 @@ class SendPaymentRequestReminderRequest(RequestPayload):
 
 @dataclass(frozen=True)
 class CreateInvoiceRequest(RequestPayload):
+    # https://coins-docs.github.io/rest-api/#creating-invoices
+
     # The amount expected from the customer.
     amount: Decimal
 
@@ -689,6 +701,7 @@ class CreateInvoiceRequest(RequestPayload):
 
 @dataclass(frozen=True)
 class GetInvoicesRequest(RequestPayload):
+    # https://coins-docs.github.io/rest-api/#retrieving-invoices
     invoice_id: str = None
     start_time: typing.Optional[datetime] = field(
         default=None,
@@ -712,6 +725,7 @@ class GetInvoicesRequest(RequestPayload):
 
 @dataclass(frozen=True)
 class CancelInvoiceRequest(RequestPayload):
+    # https://coins-docs.github.io/rest-api/#canceling-invoices
     invoice_id: str
 
     def expected_response(self) -> typing.Type[TResponsePayload]:
@@ -720,6 +734,7 @@ class CancelInvoiceRequest(RequestPayload):
 
 @dataclass(frozen=True)
 class QuoteFetchRequest(RequestPayload):
+    # https://coins-docs.github.io/rest-api/#fetch-a-quote
     sourceCurrency: str
     targetCurrency: str
     sourceAmount: str
@@ -730,6 +745,7 @@ class QuoteFetchRequest(RequestPayload):
 
 @dataclass(frozen=True)
 class QuoteAcceptRequest(RequestPayload):
+    # https://coins-docs.github.io/rest-api/#accept-the-quote
     quoteId: str
 
     def expected_response(self) -> typing.Type[TResponsePayload]:
@@ -738,6 +754,8 @@ class QuoteAcceptRequest(RequestPayload):
 
 @dataclass(frozen=True)
 class SupportedFiatPaymentChannelsRequest(RequestPayload):
+    # https://coins-docs.github.io/rest-api/#get-supported-fiat-channels
+
     # Set this parameter to -1 to indicate a cash-out transaction. At present, only cash-out transactions are supported.
     transactionType: str
 
@@ -749,6 +767,31 @@ class SupportedFiatPaymentChannelsRequest(RequestPayload):
 
     def expected_response(self) -> typing.Type[TResponsePayload]:
         return SupportedFiatChannelResponse
+
+
+@dataclass(frozen=True)
+class RetrieveOrderHistoryRequest(RequestPayload):
+    # https://coins-docs.github.io/rest-api/#retrieve-order-history
+    startTime: typing.Optional[datetime] = field(
+        default=None,
+        metadata=config(
+            encoder=lambda _: _ and int(_.timestamp() * 1000),
+            decoder=lambda _: datetime.fromtimestamp(_ / 1000.0)
+        )
+    )
+    endTime: typing.Optional[datetime] = field(
+        default=None,
+        metadata=config(
+            encoder=lambda _: _ and int(_.timestamp() * 1000),
+            decoder=lambda _: datetime.fromtimestamp(_ / 1000.0)
+        )
+    )
+    status: typing.Optional[DeliveryStatus] = None
+    page: typing.Optional[int] = None
+    size: typing.Optional[int] = None
+
+    def expected_response(self) -> typing.Type[TResponsePayload]:
+        return RetrieveOrderHistoryResponse
 
 
 @dataclass(frozen=True)

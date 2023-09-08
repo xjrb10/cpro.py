@@ -2,7 +2,7 @@ import pytest
 
 from cpro.client.rest import BlockingHTTPClient, AsyncIOHTTPClient, HTTPClient
 from cpro.models.rest.endpoints import APIEndpoints
-from cpro.models.rest.request import ExchangeInformationRequest
+from cpro.models.rest.request import ExchangeInformationTickerRequest
 from cpro.models.rest.response import PingResponse, ExchangeInformationResponse
 from tests.utils import _test_endpoint
 
@@ -36,7 +36,7 @@ async def test_exchange_info(client: HTTPClient):
 
     response: ExchangeInformationResponse = await _test_endpoint(
         client, APIEndpoints.GET_EXCHANGE_INFO,
-        ExchangeInformationRequest(
+        ExchangeInformationTickerRequest(
             symbol="ETHPHP"
         )
     )
@@ -45,7 +45,7 @@ async def test_exchange_info(client: HTTPClient):
 
     response: ExchangeInformationResponse = await _test_endpoint(
         client, APIEndpoints.GET_EXCHANGE_INFO,
-        ExchangeInformationRequest(
+        ExchangeInformationTickerRequest(
             symbols=["ETHPHP"]
         )
     )
@@ -54,7 +54,7 @@ async def test_exchange_info(client: HTTPClient):
 
     response: ExchangeInformationResponse = await _test_endpoint(
         client, APIEndpoints.GET_EXCHANGE_INFO,
-        ExchangeInformationRequest(
+        ExchangeInformationTickerRequest(
             symbols=["ETHUSDT"]
         )
     )
@@ -63,7 +63,7 @@ async def test_exchange_info(client: HTTPClient):
 
     response: ExchangeInformationResponse = await _test_endpoint(
         client, APIEndpoints.GET_EXCHANGE_INFO,
-        ExchangeInformationRequest(
+        ExchangeInformationTickerRequest(
             symbols=["ETHPHP", "ETHUSDT"]
         )
     )

@@ -2,10 +2,17 @@ import typing
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import *
+from enum import Enum
 
 from dataclasses_json import dataclass_json, Undefined, DataClassJsonMixin, config
 
-from cpro.models.rest.enums import ExecutionTypes, OrderSides
+from cpro.models.rest.enums import ExecutionTypes, OrderSides, TimeInForce, OrderType, OrderStatus
+
+
+class UserDataStreamEventTypes(Enum):
+    ACCOUNT_UPDATE = "outboundAccountPosition"
+    BALANCE_UPDATE = "balanceUpdate"
+    ORDER_UPDATE = "executionReport"
 
 
 @dataclass_json(undefined=Undefined.RAISE)
@@ -31,8 +38,7 @@ class AccountBalanceUpdateData:
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass
 class AccountUpdateData(UserStreamData):
-    eventType: str = field(metadata=config(
-        # todo: maybe turn this into an enum
+    eventType: UserDataStreamEventTypes = field(metadata=config(
         field_name="e"  # outboundAccountPosition
     ))
     eventTime: datetime = field(metadata=config(
@@ -56,8 +62,7 @@ class AccountUpdateData(UserStreamData):
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass
 class BalanceUpdateData(UserStreamData):
-    eventType: str = field(metadata=config(
-        # todo: maybe turn this into an enum
+    eventType: UserDataStreamEventTypes = field(metadata=config(
         field_name="e"  # balanceUpdate
     ))
     eventTime: datetime = field(metadata=config(
@@ -78,8 +83,7 @@ class BalanceUpdateData(UserStreamData):
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass
 class OrderUpdateData(UserStreamData):
-    eventType: str = field(metadata=config(
-        # todo: maybe turn this into an enum
+    eventType: UserDataStreamEventTypes = field(metadata=config(
         field_name="e"  # executionReport
     ))
     eventTime: datetime = field(metadata=config(
@@ -96,11 +100,11 @@ class OrderUpdateData(UserStreamData):
     side: OrderSides = field(metadata=config(
         field_name="S"
     ))
-    orderType: str = field(metadata=config(
-        field_name="o"  # todo: make this an enum? undocumented (EX: LIMIT)
+    orderType: OrderType = field(metadata=config(
+        field_name="o"
     ))
-    timeInForce: str = field(metadata=config(
-        field_name="f"  # todo: make this an enum? undocumented (EX: GTC)
+    timeInForce: TimeInForce = field(metadata=config(
+        field_name="f"
     ))
     orderQuantity: Decimal = field(metadata=config(
         field_name="q"
@@ -114,8 +118,8 @@ class OrderUpdateData(UserStreamData):
     currentExecutionType: ExecutionTypes = field(metadata=config(
         field_name="x"
     ))
-    currentOrderStatus: str = field(metadata=config(
-        field_name="X"  # todo: make this an enum? undocumented (EX: NEW)
+    currentOrderStatus: OrderStatus = field(metadata=config(
+        field_name="X"
     ))
     orderRejectReason: str = field(metadata=config(
         field_name="r"  # todo: make this an enum? undocumented (EX: NONE)
@@ -174,10 +178,10 @@ class OrderUpdateData(UserStreamData):
 
 def unmarshal_stream_data(data: dict) -> UserStreamData:
     match data['e']:
-        case "outboundAccountPosition":
+        case UserDataStreamEventTypes.ACCOUNT_UPDATE:
             return AccountUpdateData.from_dict(data)
-        case "balanceUpdate":
+        case UserDataStreamEventTypes.BALANCE_UPDATE:
             return BalanceUpdateData.from_dict(data)
-        case "executionReport":
+        case UserDataStreamEventTypes.ORDER_UPDATE:
             return OrderUpdateData.from_dict(data)
     raise ValueError(f"Unhandled event: {data['e']}")

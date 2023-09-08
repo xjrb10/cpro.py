@@ -25,7 +25,7 @@ Clear and concise CoinsPro API library written in Python for coins.ph
             - [X] [Get Current Average Price](https://coins-docs.github.io/rest-api/#current-average-price)
             - [X] [Get CryptoAsset Trading Pairs](https://coins-docs.github.io/rest-api/#cryptoasset-trading-pairs)
     - [X] HMAC Authenticated:
-        - [ ] Wallet Endpoints:
+        - [X] Wallet Endpoints:
             - [X] [Get All Coins' Information](https://coins-docs.github.io/rest-api/#all-coins-information-user_data)
             - [X] [Get Deposit Address](https://coins-docs.github.io/rest-api/#deposit-address-user_data)
             - [X] [Initiate Withdrawal](https://coins-docs.github.io/rest-api/#withdrawuser_data)
@@ -80,7 +80,7 @@ Clear and concise CoinsPro API library written in Python for coins.ph
       - [X] [Diff. Depth Stream](https://coins-docs.github.io/web-socket-streams/#diff-depth-stream)
 - [X] **User Data Event Stream:**
     - [X] Asyncio Client
-    - [ ] Blocking Client
+    - [X] Blocking Client
     - [X] Data Models:
       - [X] [Account Update](https://coins-docs.github.io/user-data-stream/#account-update)
       - [X] [Balance Update](https://coins-docs.github.io/user-data-stream/#balance-update)

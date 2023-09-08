@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from http.client import HTTPResponse
 from json import dumps, loads
 from urllib.error import HTTPError
-from urllib.request import Request, urlopen, HTTPErrorProcessor, build_opener
+from urllib.request import Request, HTTPErrorProcessor, build_opener
 
 import aiohttp
 
