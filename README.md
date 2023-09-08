@@ -104,6 +104,7 @@ import os
 
 from cpro.client.rest import BlockingHTTPClient, AsyncIOHTTPClient, APICredentials
 from cpro.models.rest.request import CoinsInformationRequest
+from cpro.models.rest.response import CoinsInformationResponse
 from cpro.models.rest.endpoints import APIEndpoints
 
 credentials = APICredentials(
@@ -113,12 +114,18 @@ credentials = APICredentials(
 
 # blocking/non-async example:
 client = BlockingHTTPClient(credentials)
-response = APIEndpoints.GET_ALL_USER_COINS.execute(client, CoinsInformationRequest())
+response: CoinsInformationResponse = APIEndpoints.GET_ALL_USER_COINS.execute(
+    client,
+    CoinsInformationRequest()
+)
 
 # non-blocking/async example:
 async_client = AsyncIOHTTPClient(credentials)
-response = await APIEndpoints.GET_ALL_USER_COINS.execute_async(client, CoinsInformationRequest())
-# diff:    ^^^^^                                        ^^^^^^
+response: CoinsInformationResponse = await APIEndpoints.GET_ALL_USER_COINS.execute_async(
+# diff:                              ^^^^^                                        ^^^^^^
+    client,
+    CoinsInformationRequest()
+)
 
 # >>> response: CoinsInformationResponse(coins=[Coin(coin='PHP', name='PHP', ... )])
 ```
@@ -130,7 +137,7 @@ NOTE: Guide assumes you have the repository locally cloned.
 **Running tests:**
 
 1. **Install required test dependencies:**
-   > `pip install -e ".[test]"`
+   > `pip install -e "cpro.py[test]"`
 2. **Create a `./tests/.env` file with your API key and secret, example in [`./tests/.env.example`](/tests/.env.example)
    **
 3. **Run unit tests**
